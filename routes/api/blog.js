@@ -4,8 +4,6 @@ const router = express.Router();
 
 const auth = require('../../middleware/auth');
 
-
-
 const resizeImage = require('../../middleware/resizeImage');
 
 const { Readable } = require('stream');
@@ -214,9 +212,9 @@ router.post('/',
             teaser = text
         }
 
-        console.log(images[0].size/1024/1024)
+        console.log("First Image Size", images[0].size/1024/1024)
 
-        const videoNames = videos.length !== 0 ? videos.map(video => generateUniqueName(video.originalname)) : []
+        const videoNames = videos.length > 0 ? videos.map(video => generateUniqueName(video.originalname)) : []
         const imageNames = images ? images.map(image => generateUniqueName(image.originalname)) : []
 
         //add video to bucket
@@ -225,20 +223,19 @@ router.post('/',
         })
 
         if (videoNames.length > 0 ) {
-            videos.forEach(video => {
-
-                console.log(video)
+            videos.forEach((video, index) => {
 
                 const readableVideoStream = new Readable()
                 readableVideoStream.push(video.buffer);
                 readableVideoStream.push(null);
-                readableVideoStream.pipe(videoBucket.openUploadStream(generateUniqueName(video.originalname)))
+                readableVideoStream.pipe(videoBucket.openUploadStream(videoNames[index]))
                 .on('error', (error) => {
                     Logs.addLog(level.error, error.message, error)
                     return res.status(500).send(error.message)
                 })
                 .on('finish', () => {
-                    Logs.addLog(level.info, $`Upload Success - {} `, '')
+
+                    Logs.addLog(level.info, `Upload Success - ${videoNames[index]}`, '')
                     //next()
                 })
             })
@@ -250,18 +247,18 @@ router.post('/',
         })
 
         if(imageNames.length > 0 ){
-            images.forEach(image => {
+            images.forEach((image, index )=> {
                 const readablePhotoStream = new Readable();
                 readablePhotoStream.push(image.buffer);
                 readablePhotoStream.push(null);
 
-                readablePhotoStream.pipe(bucket.openUploadStream(generateUniqueName(image.originalname)))
+                readablePhotoStream.pipe(bucket.openUploadStream(imageNames[index]))
                 .on('error', (error) => {
                     Logs.addLog(level.error, error.message, error)
                     return res.status(500).send(error.message + '<<<<<' )
                 })
                 .on('finish', () => {
-                    Logs.addLog(level.info, $`Upload Success - {} `, '')
+                    Logs.addLog(level.info, `Upload Success - ${imageNames[index]}`, '')
                     //next()
                 })
             })

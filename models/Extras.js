@@ -4,17 +4,19 @@ const ExtrasSchema = new mongoose.Schema({
   landingText: {
     type: String
   },
-  landingImages: {
+  landingImage: {
     type: String
   },
   OurStory:{
     type: String
   },
   date: {
-    type: String
+    type: Date,
+    default: Date.now
   },
   dateUpdated:{
-    type: String
+    type: String,
+    default: Date.now
   }
 });
 

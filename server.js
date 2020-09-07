@@ -67,6 +67,7 @@ app.use('/api/invoices', require('./routes/api/invoices'))
 
 app.use('/api/reviews', require('./routes/api/reviews'))
 
+app.use('/api/extra', require('./routes/api/extras'))
 
 
 //Test routes
