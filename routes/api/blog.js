@@ -214,8 +214,8 @@ router.post('/',
 
         console.log("First Image Size", images[0].size/1024/1024)
 
-        const videoNames = videos.length > 0 ? videos.map(video => generateUniqueName(video.originalname)) : []
-        const imageNames = images ? images.map(image => generateUniqueName(image.originalname)) : []
+        const videoNames = videos && videos.length > 0 ? videos.map(video => generateUniqueName(video.originalname)) : []
+        const imageNames = images && images.length > 0 ? images.map(image => generateUniqueName(image.originalname)) : []
 
         //add video to bucket
         const videoBucket = new mongodb.GridFSBucket(mongoose.connection.db, {
