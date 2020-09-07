@@ -11,8 +11,8 @@ const Blog = require('./models/Blog')
 
 const slowdown = require('express-slow-down')
 const RateLimit = require('express-rate-limit')
-const RedisStore = require('rate-limit-redis');
-const client = require('redis').createClient()
+// const RedisStore = require('rate-limit-redis');
+// const client = require('redis').createClient()
 
 const app = express();
 
@@ -29,23 +29,22 @@ app.use(cors());
 //For Request logging
 app.use(morgan('common'))
 
-client.on("connect", function(error) {
-  console.error("REDIS CONNECTED");
-});
+// client.on("connect", function(error) {
+//   console.error("REDIS CONNECTED");
+// });
 
-const limiter = new RateLimit({
-  store: new RedisStore({
-    client: client
-  }),
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  delayMs: 0 // disable delaying - full speed until the max limit is reached
-});
+// const limiter = new RateLimit({
+//   store: new RedisStore({
+//     client: client
+//   }),
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 100, // limit each IP to 100 requests per windowMs
+//   delayMs: 0 // disable delaying - full speed until the max limit is reached
+// });
 
 
-app.use('/api/', limiter)
+// app.use('/api/', limiter)
 
-app.set('ETag', 'weak')
 
 // Define Routes
 app.use('/api/users', require('./routes/api/users'));
@@ -88,14 +87,14 @@ app.get('/test', async (req, res) => {
 app.use(require('./middleware/error-handler'))
 
 // Serve static assets in production
-if (process.env.NODE_ENV === 'production') {
-  // Set static folder
-  app.use(express.static('client/build'));
+// if (process.env.NODE_ENV === 'production') {
+//   // Set static folder
+//   app.use(express.static('client/build'));
 
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'));
-  });
-}
+//   app.get('*', (req, res) => {
+//     res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'));
+//   });
+// }
 
 const PORT = process.env.PORT || 5000;
 
