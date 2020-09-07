@@ -9,8 +9,6 @@ const mongoose = require('mongoose')
 const mongodb = require('mongodb')
 const fresh = require('fresh')
 
-const client = require('redis').createClient()
-
 
 const auth = require('../../middleware/auth');
 
