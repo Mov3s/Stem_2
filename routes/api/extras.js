@@ -21,7 +21,7 @@ const { getNextSequence, base64String, generateUniqueName } = require('../../uti
 const multer = require('multer')
 const memStorage = multer.memoryStorage()
 //fieldSize = 6mb
-var upload = multer({storage: memStorage, limits: {fieldSize: 6000000 , fields: 5, files: 2 }}).fields([{name:'image'}])
+var upload = multer({storage: memStorage, limits: {fieldSize: 6000000 , fields: 5, files: 1 }}).fields([{name:'image'}])
 
 
 // @route    GET api/extra
@@ -97,14 +97,14 @@ router.post('/',
                 })
             })
         }
-
-        console.log("LINE 101",imageNames)
         
+        const seq = await getNextSequence(mongoose.connection.db, 'extraId')
+
         const extra = new Extras({
+            idx: seq,
             landingText: landing,
             landingImage: imageNames[0],
             OurStory: ourstory,
-           
         })
 
         const newExta = await extra.save()
@@ -136,46 +136,59 @@ router.put('/',
         }
         try {
     
-            const { landing, ourstory } = req.body   //Add Teaser
+            const { idx, landing, ourstory } = req.body   //Add Teaser
             const image = req.files['image']
            
-    
-            const extra = await Extras.find({}, {__v:0})
+            const extra = await Extras.findOne({ idx: idx}, {__v:0})
 
             if (!extra){
                 return res.status(404).json("No Data")
             }
 
-            const imageNames = image ? image.map(img => generateUniqueName(img.originalname)) : []
-    
-            //add photo to bucket
+            const extrasFileCollection = mongoose.connection.db.collection('LandingImage.files')
             const bucket = new mongodb.GridFSBucket(mongoose.connection.db, {
                 bucketName: 'LandingImage'
-            })
-    
-            if(imageNames.length > 0){
-                image.forEach((img, index) => {
-                    const readablePhotoStream = new Readable();
-                    readablePhotoStream.push(img.buffer);
-                    readablePhotoStream.push(null);
-    
-                    readablePhotoStream.pipe(bucket.openUploadStream(imageNames[index]))
-                    .on('error', (error) => {
-                        Logs.addLog(level.error, error.message, error)
-                        return res.status(500).send(error.message + '<<<<<' )
+            });
+
+            const imageNames = image && image.length > 0 
+                ? image.map(img => generateUniqueName(img.originalname))
+                : [];
+
+            if (image){
+
+                extrasFileCollection.find({ filename: extra.landingImage }).toArray((err, data) => {
+                    data.forEach(dat => {
+                        bucket.delete(dat._id, (err) => {
+                            console.log("deleted extras image")
+                        })
                     })
-                    .on('finish', () => {
-                        Logs.addLog(level.info, 'Upload Success - {}', '')
-                        //next()
+                })   
+
+                //add new image    
+                if(imageNames.length > 0){
+                    image.forEach((img, index) => {
+                        const readablePhotoStream = new Readable();
+                        readablePhotoStream.push(img.buffer);
+                        readablePhotoStream.push(null);
+        
+                        readablePhotoStream.pipe(bucket.openUploadStream(imageNames[index]))
+                        .on('error', (error) => {
+                            Logs.addLog(level.error, error.message, error)
+                            return res.status(500).send(error.message + '<<<<<' )
+                        })
+                        .on('finish', () => {
+                            Logs.addLog(level.info, 'Upload Success - {}', '')
+                            //next()
+                        })
                     })
-                })
+                }
             }
 
             extra.landingText = landing ? landing : extra.landingText
             extra.landingImage = imageNames.length > 0 ? imageNames[0] : extra.landingImage
             extra.OurStory = ourstory ? ourstory : extra.OurStory
 
-            await extra[0].save()
+            await extra.save()
     
             return res.status(200).json(extra)
           

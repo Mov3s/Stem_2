@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 
 const ExtrasSchema = new mongoose.Schema({
+  idx: {
+    type: Number
+  },
   landingText: {
     type: String
   },
