@@ -190,6 +190,7 @@ router.get('/:idx', async (req, res, next) => {
 router.put('/', 
     auth, 
     upload,
+    resizeImage,
     [
     check('name', 'Name is required')
     .not()
