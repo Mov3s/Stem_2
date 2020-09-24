@@ -17,9 +17,10 @@ const { check, validationResult } = require('express-validator');
 const Blog = require('../../models/Blog');
 const Logs = require('../../models/Logs');
 
-const { getNextSequence, base64String, base64StringVideo, generateUniqueName, logError } = require('../../utils/myUtils')
+const { getNextSequence, base64String, base64StringVideo, generateUniqueName, logError, isEmpty } = require('../../utils/myUtils')
 
-const multer = require('multer')
+const multer = require('multer');
+// const { isEmpty } = require('lodash');
 const memStorage = multer.memoryStorage()
 //fieldSize = 6mb
 var upload = multer({storage: memStorage, limits: {paths: 2, fieldSize: 6000000 , fields: 5, files: 10 }}).fields([{name:'images'}, {name: 'videos'}])
@@ -31,16 +32,19 @@ var upload = multer({storage: memStorage, limits: {paths: 2, fieldSize: 6000000 
 router.get('/', async (req, res, next) => {
     try {
 
+        console.log(typeof req.query.sort)
         var blogs, header 
 
         const filter = req.query.filter === undefined  || req.query.filter === '{}' ? {} : JSON.parse(req.query.filter)
         const range = req.query.range === undefined ? {} : JSON.parse(req.query.range)
-        const sort = req.query.sort === undefined ? {} : JSON.parse(req.query.sort)
+        const sort = req.query.sort === undefined ? {} : req.query.sort === 'id'? req.query.sort : JSON.parse(req.query.sort)
         const page = req.query.page === undefined ? {} : JSON.parse(req.query.page)
         const perPage = req.query.perPage === undefined ? {} : JSON.parse(req.query.perPage)
         const order = req.query.order === undefined ? {} : req.query.order
 
         // console.log("[BLOGS - DECODEDURL]", decodeURIComponent(req.url.replace(/\+/g, ' ')))
+
+        const count = await Blog.countDocuments({}).exec()
 
         if (Object.keys(req.query).length === 0) {
 
@@ -48,7 +52,11 @@ router.get('/', async (req, res, next) => {
 
           if (!blogs) return res.status(404).json("Blogs not Found")
 
-          Blog.setContentLimit(res, header, range, blogs) //add static func GetContentLimit
+          console.log("[Default]", blogs.length)
+        
+
+          Blog.setContentLimit(res, header, [1, count], count) //add static func GetContentLimit
+          return res.status(206).json(blogs)
 
         }else{
 
@@ -56,10 +64,15 @@ router.get('/', async (req, res, next) => {
   
             if (Object.keys(filter).length === 0){
                 
+                //pass all blogs length to sort
                 blogs = await Blog.sort(sort, range)
                 if (!blogs) return res.status(404).json("Blog not found")
-                // console.log("[BLOG - SORT]", blogs)
-                Blog.setContentLimit(res, header, range, blogs)
+                console.log("[BLOG - SORT]", blogs.length)
+
+               
+
+                Blog.setContentLimit(res, header, range, count)
+                return res.status(206).json(blogs)
 
             }
 
@@ -67,18 +80,32 @@ router.get('/', async (req, res, next) => {
               
                 blogs = await Blog.textSearch(filter, sort, range)
                 if (!blogs) return res.status(404).json("Blog not Found")
-                // console.log("[BLOG - QUERY with range]", blogs)
-                Blog.setContentLimit(res, header, range, blogs)
-
+                console.log("[BLOG - QUERY with range]", blogs.length)
+                Blog.setContentLimit(res, header, [0, blogs.length], count)
+                return res.status(206).json(blogs)
             }
 
           }
 
+        //   /***************** */
+        //   if (isEmpty(filter) && sort && perPage && page && order  ){
+
+        //     console.log(page)
+        //     console.log(perPage)
+        //     console.log(sort)
+        //     console.log(order)
+        //     blogs = await Blog.find({},{__v:0, _id:0});
+        //     if (!blogs) return res.status(404).json("Blogs not found")
+        //     console.log("[BLOG - GEATALL 4 Pagination]", blogs.length)
+        //     Blog.setContentLimit(res, header, [1, blogs.length], blogs)
+        //   }
+
           if (filter.id){
             blogs = await Blog.find({}, {_id: 0, __v:0}).where("idx").in(filter.id)
             if (!blogs) return res.status(404).json("Blog not Found")
-            // console.log("[BLOG - FINDMANYBYID]", blogs)
-            Blog.setContentLimit(res, header, range, blogs)
+            console.log("[BLOG - FINDMANYBYID]", blogs.length)
+            Blog.setContentLimit(res, header, [1, blogs.length], count)
+            return res.status(206).json(blogs)
           }
 
           if (Object.keys(page).length > 0 && Object.keys(perPage).length > 0){
@@ -86,8 +113,9 @@ router.get('/', async (req, res, next) => {
 
                 blogs = await Blog.textSearch(filter, [sort, order], ["a", page, perPage])
                 if (!blogs) return res.status(404).json("Blog not Found")
-                // console.log("[BLOG - QUERY with perPage]", blogs)
-                Blog.setContentLimit(res, header, ["a", page, perPage], blogs)
+                console.log("[BLOG - QUERY with perPage]", blogs.length)
+                Blog.setContentLimit(res, header, ["a", page, perPage], count)
+                return res.status(206).json(blogs)
                 
             }
           }

@@ -50,42 +50,57 @@ const BlogSchema = new mongoose.Schema({
   },
 });
 
-// BlogSchema.index({title: 'text', teaser: 'text', text: 'text'}, {default_language: 'none'});
 
-BlogSchema.statics.setContentLimit = (res, header, range, resource) => {
+BlogSchema.statics.setContentLimit = (res, header, range, count) => {
 
   if (range[0] === "a" ) {
       console.log("USing Page/Perpage for range")
 
-      var first = (range[2] * range[1]) - range[2]
+      var first = (range[1] - 1) * range[2]
+      var last = (range[2] * range[1]) - range[2]
 
-      if ( resource.length <= rangeLimit){
+      if ( count <= range[2]){
 
-          setHeaderForPartial(res, header, first, resource.length, resource.length)
-          return res.status(206).json(resource)
+          setHeaderForPartial(res, header, first, count, count)
+          console.log("Using PerPage :  count < limit")
           
       } else{
   
-          setHeaderForPartial(res, header, first, rangeLimit + 1, resource.length) 
-          return res.status(206).json(resource) 
+          setHeaderForPartial(res, header, first, last, count) 
+          console.log("Using PerPage : count >= limit")
       }
 
   }else{
-      const rangeFirst = range[0] ? range[1] : 0
-      const rangeLimit = range[1] ? range[1] : 10
-  
-      if ( resource.length <= rangeLimit){
+      var rangeFirst = range[0] ? range[0] : 0
+      var rangeLimit = range[1] ? range[1] : 9
 
-          setHeaderForPartial(res, header, rangeFirst, resource.length, resource.length)
-          return res.status(206).json(resource)
-          
+      if (count <= rangeLimit){
+
+        rangeLimit = rangeLimit - rangeFirst
+
+        const remaining = count - rangeFirst
+
+        console.log(remaining)
+        if (remaining < rangeLimit){
+          setHeaderForPartial(res, header, rangeFirst, remaining + 1, count)
+          console.log("INSIDE NEW CONTROL")
+
+        }else{
+          setHeaderForPartial(res, header, rangeFirst, rangeLimit + 1, count)
+          console.log("HERE")
+
+       }
+        
       } else{
   
-          setHeaderForPartial(res, header, rangeFirst, rangeLimit + 1, resource.length) 
-          return res.status(206).json(resource) 
+          rangeLimit = rangeLimit - rangeFirst
+          setHeaderForPartial(res, header, rangeFirst, rangeLimit + 1, count) 
+          console.log("HERE 34567890")
       }
   }
 }
+
+
 
 
 ///Helper function to get videos and images for Blogs
@@ -163,32 +178,37 @@ const findChunksForBlog =  async (blogs) =>{
 
 BlogSchema.statics.sort = async (sort, range, cb) => {
 
-  var num = parseInt(range[1] + 1)
+  console.log("RANGE FROM SORT", range[1])
+  
+  //removed limit to show next/prev button on Blog list page
+  //var num = parseInt(range[1] + 1)
 
   var blog
 
   if (sort[0] === 'id'){
    
     if (sort[1] === 'ASC'){
-      blog = await Blog.find({}, {_id: 0, __v:0}).sort({"idx": 1}).limit(num).exec(cb) 
+      blog = await Blog.find({}, {_id: 0, __v:0}).sort({"idx": 1}).limit(range[1] + 1).skip(range[0])
       blog = await findChunksForBlog(blog)
+      console.log("Happy path")
       return blog
 
     }else{
 
-      blog = await Blog.find({}, {_id: 0, __v:0}).sort({"idx": -1}).limit(num).exec(cb)
+      blog = await Blog.find({}, {_id: 0, __v:0}).sort({"idx": -1}).limit(range[1] + 1).skip(range[0])
       blog = await findChunksForBlog(blog)
+      console.log("bad path")
       return blog
    }
    
   }
 
   if (sort[1] === 'ASC'){
-    blog = await Blog.find({}, {_id: 0, __v:0}).sort(sort[0]).limit(num).exec(cb)
+    blog = await Blog.find({}, {_id: 0, __v:0}).sort(sort[0]).limit(range[1] + 1).skip(range[0]).exec(cb)
     blog = findChunksForBlog(blog)
     return blog
   }else{
-    blog = await Blog.find({}, {_id: 0, __v:0}).sort(-sort[0]).limit(num).exec(cb)
+    blog = await Blog.find({}, {_id: 0, __v:0}).sort(-sort[0]).limit(range[1] + 1).skip(range[0]).exec(cb)
     blog = findChunksForBlog(blog)
     return blog
   }

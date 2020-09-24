@@ -71,7 +71,8 @@ const getNextSequence = async (db, name) => {
 
 
  const setHeaderForPartial =  (res, header, first, limit, length) => {
-     header = contentRange.format({
+
+    header = contentRange.format({
         unit: 'items',
         first: first,
         limit: limit,
@@ -87,6 +88,7 @@ const getNextSequence = async (db, name) => {
         'Content-Range': header
     })
 }
+
 
 const setTokenCookie = (res, token) =>
 {
@@ -104,6 +106,10 @@ const setJWTHeader = (res, token) => {
     })
 }
 
+const isEmpty = inputObject => {
+    return Object.keys(inputObject).length === 0;
+};
+
  module.exports = {
      setTokenCookie: setTokenCookie,
      setJWTHeader: setJWTHeader,
@@ -114,4 +120,5 @@ const setJWTHeader = (res, token) => {
      base64String: base64String,
      base64StringVideo: base64StringVideo,
      logError: logError,
+     isEmpty: isEmpty
  }

@@ -89,13 +89,17 @@ router.get(
 
         // console.log("[REVIEWS - DECODEDURL]", decodeURIComponent(req.url.replace(/\+/g, ' ')))
 
+        const count = await Reviews.countDocuments({}).exec()
+
         if (Object.keys(req.query).length === 0) {
 
           reviews = await Reviews.find({},{date: 0, __v: 0, _id: 0})     
 
           if (!reviews) return res.status(404).json("Reviews not Found")
 
-          Reviews.setContentLimit(res, header, range, reviews)
+          Reviews.setContentLimit(res, header, range, count)
+          return res.status(206).json(reviews)
+
 
         }else{
 
@@ -105,8 +109,9 @@ router.get(
 
                 reviews = await Reviews.sort(sort, range)
                 if (!reviews) return res.status(404).json("Reviews not found")
-                // console.log("[REVIEWS - SORT]", reviews)
-                Reviews.setContentLimit(res, header, range, reviews)
+                console.log("[REVIEWS - SORT]", reviews.length)
+                Reviews.setContentLimit(res, header, range, count)
+                return res.status(206).json(reviews)
 
             }
 
@@ -114,8 +119,10 @@ router.get(
               
                 reviews = await Reviews.textSearch(filter, sort, range)
                 if (!reviews) return res.status(404).json("Reviews not Found")
-                // console.log("[REVIEWS - QUERY]", reviews)
-                Reviews.setContentLimit(res, header, range, reviews)
+                console.log("[REVIEWS - QUERY]", reviews)
+                Reviews.setContentLimit(res, header, range, count)
+                return res.status(206).json(reviews)
+
 
             }
 
@@ -123,8 +130,10 @@ router.get(
                 
                 reviews = await Reviews.find({ customer_id: filter.customer_id }, {__v: 0, _id: 0})
                 if (!reviews) return res.status(404).json("Reviews not Found")
-                // console.log("[REVIEWS - QUERY(customer_id)]", reviews)
-                Reviews.setContentLimit(res, header, range, reviews)
+                console.log("[REVIEWS - QUERY(customer_id)]", reviews)
+                Reviews.setContentLimit(res, header, range, count)
+                return res.status(206).json(reviews)
+
 
             }
 
@@ -132,8 +141,10 @@ router.get(
                 
                 reviews = await Reviews.find({ product_id: filter.product_id }, {__v: 0, _id: 0})
                 if (!reviews) return res.status(404).json("Reviews not Found")
-                // console.log("[REVIEWS - QUERY(product_id)]", reviews)
-                Reviews.setContentLimit(res, header, range, reviews)
+                console.log("[REVIEWS - QUERY(product_id)]", reviews)
+                Reviews.setContentLimit(res, header, range, count)
+                return res.status(206).json(reviews)
+
 
             }
 
