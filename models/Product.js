@@ -102,39 +102,53 @@ ProductSchema.statics.GetThumbnails = async (products) => {
 }
 
 
-ProductSchema.statics.setContentLimit = (res, header, range, resource) => {
+ProductSchema.statics.setContentLimit = (res, header, range, count) => {
 
-    const rangeFirst = range[0] ? parseInt(range[0], 10) : 0
-    const rangeLimit = range[1] ? parseInt(range[1], 10) : 10
+  if (range[0] === "a" ) {
+    console.log("USing Page/Perpage for range")
 
-    if (range[0] === "a" ) {
+    var first = (range[1] - 1) * range[2]
+    var last = (range[2] * range[1]) - range[2]
 
-        var first = (range[2] * range[1]) - range[2]
+    if ( count <= range[2]){
 
-        if ( resource.length <= rangeLimit){
+        setHeaderForPartial(res, header, first, count, count)
+        console.log("Using PerPage :  count < limit")
+        
+    } else{
 
-            setHeaderForPartial(res, header, first, resource.length, resource.length)
-            res.status(206).json(resource)
-            
-        } else{
-    
-            setHeaderForPartial(res, header, first, range[2], resource.length) 
-            res.status(206).json(resource) 
-        }
-
-    }else{
-    
-        if ( resource.length <= rangeLimit){
-
-            setHeaderForPartial(res, header, rangeFirst, resource.length, resource.length)
-            res.status(206).json(resource)
-            
-        } else{
-    
-            setHeaderForPartial(res, header, rangeFirst, rangeLimit+1, resource.length) 
-            res.status(206).json(resource) 
-        }
+        setHeaderForPartial(res, header, first, last, count) 
+        console.log("Using PerPage : count >= limit")
     }
+
+}else{
+    var rangeFirst = range[0] ? range[0] : 0
+    var rangeLimit = range[1] ? range[1] : 9
+
+    if (count <= rangeLimit){
+
+      rangeLimit = rangeLimit - rangeFirst
+
+      const remaining = count - rangeFirst
+
+      console.log(remaining)
+      if (remaining < rangeLimit){
+        setHeaderForPartial(res, header, rangeFirst, remaining + 1, count)
+        console.log("INSIDE NEW CONTROL")
+
+      }else{
+        setHeaderForPartial(res, header, rangeFirst, rangeLimit + 1, count)
+        console.log("HERE")
+
+     }
+      
+    } else{
+
+        rangeLimit = rangeLimit - rangeFirst
+        setHeaderForPartial(res, header, rangeFirst, rangeLimit + 1, count) 
+        console.log("HERE 34567890")
+    }
+}
     
 }
 

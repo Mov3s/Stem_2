@@ -69,8 +69,6 @@ router.get('/', async (req, res, next) => {
                 if (!blogs) return res.status(404).json("Blog not found")
                 console.log("[BLOG - SORT]", blogs.length)
 
-               
-
                 Blog.setContentLimit(res, header, range, count)
                 return res.status(206).json(blogs)
 

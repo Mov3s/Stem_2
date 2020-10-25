@@ -60,6 +60,8 @@ router.get('/', async (req, res, next) => {
 
         var products, header
 
+        const count = await Product.countDocuments({}).exec()
+
         if (Object.keys(req.query).length === 0) {
 
             products = await Product.find({},{__v: 0, _id:0});
@@ -67,7 +69,8 @@ router.get('/', async (req, res, next) => {
             if (!products) return res.status(404).json("Products not Found")
 
             Product.GetThumbnails(products).then((productList) => {
-                Product.setContentLimit(res, header, range, productList)
+                Product.setContentLimit(res, header, range, count)
+                return res.status(206).json(productList)
             })
 
         }else{
@@ -80,7 +83,8 @@ router.get('/', async (req, res, next) => {
                     // console.log("[PRODUCT - SORT]",products)
 
                     Product.GetThumbnails(products).then((productList) => {
-                        Product.setContentLimit(res, header, range, productList)
+                        Product.setContentLimit(res, header, range, count)
+                        return res.status(206).json(productList)
                     })
                 }
                 if (filter.q){
@@ -89,7 +93,8 @@ router.get('/', async (req, res, next) => {
                     // console.log("[PRODUCT - QUERY]",products)
 
                     Product.GetThumbnails(products).then((productList) => {
-                        Product.setContentLimit(res, header, range, productList)
+                        Product.setContentLimit(res, header, range, count)
+                        return res.status(206).json(productList)
                     })
                 }
             }
@@ -102,7 +107,8 @@ router.get('/', async (req, res, next) => {
                     if (!products) return res.status(404).json("Products not Found")
 
                     Product.GetThumbnails(products).then((productList) => {
-                        Product.setContentLimit(res, header, ["a",page, perPage], productList) //a used as flag in static function
+                        Product.setContentLimit(res, header, ["a",page, perPage], count) //a used as flag in static function
+                        return res.status(206).json(productList)
                     })
 
                 }
@@ -113,7 +119,8 @@ router.get('/', async (req, res, next) => {
                     if (!products) return res.status(404).json("Products not Found")
 
                     Product.GetThumbnails(products).then((productList) => {
-                        Product.setContentLimit(res, header, range, productList)
+                        Product.setContentLimit(res, header, range, count)
+                        return res.status(206).json(productList)
                     })
                 
                 }
@@ -127,7 +134,8 @@ router.get('/', async (req, res, next) => {
                 // console.log("[PRODUCT - FINDMANY]", products)
 
                 Product.GetThumbnails(products).then((productList) => {
-                    Product.setContentLimit(res, header, range, productList)
+                    Product.setContentLimit(res, header, range, count)
+                    return res.status(206).json(productList)
                 })
             }
 
@@ -347,6 +355,13 @@ router.post("/",
 
         const cat = await Category.findOne({"idx":category_id})
 
+        // let base64Arr = []
+        // previews.map(prev => { 
+        //     const b64 = prev.buffer.toString('base64')
+        //     const imageb64 = base64String(b64, prev.mimetype)
+        //     base64Arr.push(imageb64)
+        // })
+
         var product = new Product({
             idx: seq,
             name: name,
@@ -377,26 +392,27 @@ router.post("/",
                 size: newProduct.size,
             }
         });
+        console.log(stripeProduct)
         //Logs.addLog() - INFO
 
         const stripePrice = await stripe.prices.create({
             currency: 'eur',
-            unit_amount_decimal: stripeProduct.price,
+            unit_amount_decimal: stripeProduct.metadata.price,
             product: stripeProduct.id,
         })
         //Logs.addLog() - INFO
 
-
         const updatedStripeProduct = await stripe.products.update(
-            stripeProduct.idx,
+            stripeProduct.id,
             {metadata: {price_id: stripePrice.id}}
         );
 
-        res.status(201).json({updatedStripeProduct, ...stripePrice});
+        // 
+        return res.status(201).json({updatedStripeProduct, ...stripePrice});
 
     } catch (error) {
         console.log(error)
-        res.status(500).json("Server Error Adding Products")
+        return res.status(500).json({error: error.message})
     }
 })
 

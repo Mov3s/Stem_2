@@ -245,7 +245,6 @@ BlogSchema.statics.textSearch = (filter, sort, range, cb) => {
                     .limit(parseInt(range[1]+1, 10))
                     .exec(cb)
   }
-
 }
 
 module.exports = Blog = mongoose.model('blog', BlogSchema);
