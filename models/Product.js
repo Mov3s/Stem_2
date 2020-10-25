@@ -60,18 +60,21 @@ const findChunksForThumbnail =  async (products) =>{
 
     const imageName = products.previews.length > 0 ? products.previews[0] :  "No Image";
 
-    const blobs = await filesCollection.find({ "filename": imageName }).toArray()
+    if (imageName !== "No Image"){  
+        const blobs = await filesCollection.find({ "filename": imageName }).toArray()
 
-    const blobsJSON = JSON.parse(JSON.stringify(blobs));
+        var ext, _imageBinaryJSON
 
-    var ext = blobsJSON[0].filename.split('.')[1]
+        const blobsJSON = JSON.parse(JSON.stringify(blobs));
+        ext = blobsJSON[0].filename.split('.')[1]
 
-    const imageBinary = await chunksCollection.find({ "files_id" : mongoose.Types.ObjectId(blobsJSON[0]._id) }).toArray()
+        const imageBinary = await chunksCollection.find({ "files_id" : mongoose.Types.ObjectId(blobsJSON[0]._id) }).toArray()
+        _imageBinaryJSON = JSON.parse(JSON.stringify(imageBinary))
+        products = JSON.parse(JSON.stringify(products))
+        products.base64 = base64String(_imageBinaryJSON[0].data, ext)
 
-    const _imageBinaryJSON = JSON.parse(JSON.stringify(imageBinary))
-
-    products = JSON.parse(JSON.stringify(products))
-    products.base64 = base64String(_imageBinaryJSON[0].data, ext)
+        return products
+    }
 
     return products
 }

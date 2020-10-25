@@ -10,7 +10,7 @@ const auth = async (req, res, next) => {
   const secret = config.get('jwtSecret')
 
   // Get token string from header
-  var token = req.header('Authorization') ? req.header('Authorization').split(' ')[1]: null;
+  var token = req.header('Authorization') ? req.header('Authorization').split(' ')[1]: req.header('x-auth-token');
 
   // Check if not token
   if (!token || token === null) {
@@ -40,7 +40,7 @@ const auth = async (req, res, next) => {
             if (!user){
               return res.status(401).json({message: 'Unauthorized'})
             }else{
-              req.user.isAdmin = user.isAdmin
+              // req.user.isAdmin = user.isAdmin ? user.isAdmin : false
               const refreshToken = RefreshToken.find({user: user._id})
               req.user.ownsToken = token => !!refreshToken.find(x => x.token === token);
             }

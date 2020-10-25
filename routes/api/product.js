@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const stripe = require('stripe')(process.env.SECRET_KEY)
 
 const auth = require('../../middleware/auth');
 const resizeImage = require('../../middleware/resizeImage')
@@ -20,6 +21,8 @@ const {getNextSequence, base64String, generateUniqueName, logError } = require('
 
 const Product = require('../../models/Product');
 const Category = require('../../models/Category');
+const Logs = require('../../models/Logs')
+const level = require('../../utils/LogLevel')
 
 const multer = require('multer')
 const memStorage = multer.memoryStorage()
@@ -29,7 +32,7 @@ var upload = multer({storage: memStorage, limits: {paths: 2, fieldSize: 6000000 
 // @route    GET api/products
 // @desc     Get all products in db
 // @access   Private
-router.get('/', auth, async (req, res, next) => {
+router.get('/', async (req, res, next) => {
     try {
 
         const filter = req.query.filter === undefined ? {} : JSON.parse(req.query.filter)
@@ -287,14 +290,12 @@ router.put('/',
 })
 
 
-
-
 // @route    POST api/products
 // @desc     Add products to db 
 // @access   Private
 router.post("/", 
     [
-        auth, 
+        // auth, 
         upload,
         resizeImage,
         [
@@ -361,8 +362,37 @@ router.post("/",
         })
         
         const newProduct = await product.save();
+        //Logs.addLog() - INFO
+        console.log("[NEWPRODUCT SAVED TO MONGO]", newProduct.idx)
 
-        res.status(201).json(newProduct);
+        const stripeProduct = await stripe.products.create({
+            id: newProduct.idx,
+            name: newProduct.name,
+            metadata: {
+                price: newProduct.price,
+                stock: newProduct.stock,
+                benefits: newProduct.benefits,
+                ingredients: newProduct.ingredients,
+                reference: newProduct.reference,
+                size: newProduct.size,
+            }
+        });
+        //Logs.addLog() - INFO
+
+        const stripePrice = await stripe.prices.create({
+            currency: 'eur',
+            unit_amount_decimal: stripeProduct.price,
+            product: stripeProduct.id,
+        })
+        //Logs.addLog() - INFO
+
+
+        const updatedStripeProduct = await stripe.products.update(
+            stripeProduct.idx,
+            {metadata: {price_id: stripePrice.id}}
+        );
+
+        res.status(201).json({updatedStripeProduct, ...stripePrice});
 
     } catch (error) {
         console.log(error)

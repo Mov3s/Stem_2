@@ -76,7 +76,7 @@ router.post(
 // @access   private
 router.get(
     '/',
-    auth,
+    // auth,
     async (req, res) => {
 
       try {
@@ -192,11 +192,11 @@ router.get(
 // @desc     Edit single Review
 // @access   private
 router.put('/:idx', 
-  auth, 
+  // auth, 
   [
-  check('comment', 'Please include a valid comment')
-  .not()
-  .isEmpty()
+  // check('comment', 'Please include a valid comment')
+  // .not()
+  // .isEmpty()
   ],
    async (req, res, next) => {
     const errors = validationResult(req);
@@ -205,7 +205,7 @@ router.put('/:idx',
     }
 
     try{
-      const { comment, rating } = req.body
+      const { comment, rating, status } = req.body
 
       const review = await Reviews.findOne({"idx" : req.params.idx }, {date: 0, __v: 0})
 
@@ -215,6 +215,7 @@ router.put('/:idx',
 
       review.comment = comment ? comment : review.comment
       review.rating = rating ? rating : review.rating
+      review.status = status ? status : review.status
 
       await review.save();
 

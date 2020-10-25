@@ -4,7 +4,6 @@ const level = {
     info : 'info',
 }
 
-
 module.exports = {
     level
 }

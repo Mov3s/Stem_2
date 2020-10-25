@@ -18,10 +18,11 @@ const secret = config.get('jwtSecret')
 // @access   Public
 router.get('/', auth, async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+
+    const user = await User.findById(req.user.id, {__v: 0, date: 0, password: 0})
     res.json(user);
   } catch (err) {
-    console.error(err.message);
+    console.log(err);
     res.status(500).send('Server Error');
   }
 });

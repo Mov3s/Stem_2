@@ -21,7 +21,7 @@ const { getNextSequence, base64String, generateUniqueName } = require('../../uti
 const multer = require('multer')
 const memStorage = multer.memoryStorage()
 //fieldSize = 6mb
-var upload = multer({storage: memStorage, limits: {fieldSize: 6000000 , fields: 5, files: 1 }}).fields([{name:'image'}])
+var upload = multer({storage: memStorage, limits: {fieldSize: 6000000 , fields: 5, files: 3 }}).fields([{name:'image'}])
 
 
 // @route    GET api/extra
@@ -31,17 +31,48 @@ router.get('/', async (req, res, next) => {
     try {
 
         // const { text, image, story} = req.body
-        const extra = await Extras.find({}, {__v:0, _id: 0})
+        var extras = await Extras.find({}, {__v:0, _id: 0})
         
-        if (!extra || extra.length == 0) return res.status(500).json("No Data")
+        if (!extras || extras.length == 0) return res.status(500).json("No Data")
+
+        const imageNames = extras.map(img => img.landingImages)
+        console.log(imageNames)
+        //Extra Images
+        const imageChunksCollecttion =  mongoose.connection.db.collection("LandingImages.chunks")
+
+        const imageFilesCollecttion =  mongoose.connection.db.collection("LandingImages.files")
+ 
+        var base64Images = []
+ 
+        for (let image of imageNames[0]){
+            
+            const ress = await imageFilesCollecttion.find({filename:image}).toArray()
+
+            if(ress.length === 0 || ress === undefined){
+                console.log("Here")
+                continue
+            }
+ 
+            var ext = ress[0].filename.split('.')[1]
+            console.log(ress[0])
+            const chunks = await imageChunksCollecttion.find({ files_id: mongoose.Types.ObjectId(ress[0]._id) }).toArray()
+
+            var chunksJSON = JSON.parse(JSON.stringify(chunks))
+ 
+            base64Images.push(base64String(chunksJSON[0].data, ext))
+             
+        }
+
+        extras = JSON.parse(JSON.stringify(extras))
+        extras[0].base64 = base64Images
         
-        res.status(200).json(extra[0])
+        return res.status(200).json(extras[0])
 
     } catch (error) {
         console.log(error)
         Logs.addLog(level.error, error.message, error)
         const key = level.error
-        res.status(500).json({key : error.message})
+        res.status(500).json({[key] : error.message})
     }
 })
 
@@ -51,7 +82,7 @@ router.get('/', async (req, res, next) => {
 // @access   Public
 router.post('/', 
     [
-        auth, 
+        // auth, 
         upload,
         [
             //for express-validator
@@ -76,7 +107,7 @@ router.post('/',
         console.log(imageNames)
         //add photo to bucket
         const bucket = new mongodb.GridFSBucket(mongoose.connection.db, {
-            bucketName: 'LandingImage'
+            bucketName: 'LandingImages'
         })
 
         if(imageNames.length > 0 ){
@@ -103,7 +134,7 @@ router.post('/',
         const extra = new Extras({
             idx: seq,
             landingText: landing,
-            landingImage: imageNames[0],
+            landingImages: imageNames,
             OurStory: ourstory,
         })
 
@@ -114,7 +145,7 @@ router.post('/',
     } catch (error) {
         Logs.addLog(level.error, error.message, error)
         const key = level.error
-        res.status(500).json({key : error.message})
+        res.status(500).json({[key] : error.message})
     }
 })
 
@@ -123,7 +154,7 @@ router.post('/',
 // @desc Edit extras 
 router.put('/', 
     [
-        auth, 
+        // auth, 
         upload,
         [
   
@@ -145,9 +176,9 @@ router.put('/',
                 return res.status(404).json("No Data")
             }
 
-            const extrasFileCollection = mongoose.connection.db.collection('LandingImage.files')
+            const extrasFileCollection = mongoose.connection.db.collection('LandingImages.files')
             const bucket = new mongodb.GridFSBucket(mongoose.connection.db, {
-                bucketName: 'LandingImage'
+                bucketName: 'LandingImages'
             });
 
             const imageNames = image && image.length > 0 
@@ -156,16 +187,21 @@ router.put('/',
 
             if (image){
 
-                extrasFileCollection.find({ filename: extra.landingImage }).toArray((err, data) => {
-                    data.forEach(dat => {
-                        bucket.delete(dat._id, (err) => {
-                            console.log("deleted extras image")
+                extra.landingImages.forEach(image => {
+                    extrasFileCollection.find({ filename: image }).toArray((err, data) => {
+                        if (err) console.log(err)
+                        data.forEach(dat => {
+                            bucket.delete(dat._id, (err) => {
+                                
+                                console.log("deleted extras image")
+                            })
                         })
-                    })
-                })   
+                    })   
+                })
+               
 
                 //add new image    
-                if(imageNames.length > 0){
+                if(image && imageNames.length > 0){
                     image.forEach((img, index) => {
                         const readablePhotoStream = new Readable();
                         readablePhotoStream.push(img.buffer);
@@ -178,6 +214,7 @@ router.put('/',
                         })
                         .on('finish', () => {
                             Logs.addLog(level.info, 'Upload Success - {}', '')
+                            console.log(`Successfully updated images - ${imageNames[index]}`)
                             //next()
                         })
                     })
@@ -185,7 +222,7 @@ router.put('/',
             }
 
             extra.landingText = landing ? landing : extra.landingText
-            extra.landingImage = imageNames.length > 0 ? imageNames[0] : extra.landingImage
+            extra.landingImages = imageNames ? imageNames : extra.landingImages
             extra.OurStory = ourstory ? ourstory : extra.OurStory
 
             await extra.save()

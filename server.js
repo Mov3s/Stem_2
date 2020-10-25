@@ -5,6 +5,9 @@ const cors = require('cors')
 const morgan = require('morgan')
 const helmet = require('helmet')
 
+require('dotenv').config()
+const stripe = require('stripe')(process.env.SECRET_KEY)
+
 // var passport = require('passport')
 const cookieParser = require('cookie-parser')
 const Blog = require('./models/Blog')
@@ -69,6 +72,12 @@ app.use('/api/reviews', require('./routes/api/reviews'))
 
 app.use('/api/extra', require('./routes/api/extras'))
 
+//testing bespoke integration
+app.use('/api/createsession', require('./routes/stripe/createSession'))
+
+app.use('/api/create-payment-intent', require('./routes/stripe/createPaymentIntent'))
+app.use('/api/confirm-payment-intent', require('./routes/stripe/confirmPaymentIntent'))
+app.use('/api/create-session', require('./routes/stripe/createSession'))
 
 //Test routes
 app.get('/test', async (req, res) => {

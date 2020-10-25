@@ -8,6 +8,7 @@ const errorHandler = (err, req, res, next) => {
             return res.status(statusCode).json({ message: err });
         case err.name === 'ValidationError':
             // mongoose validation error
+            console.log('[VALIDATION]', err)
             return res.status(400).json({ message: err.message });
         case err.name === 'UnauthorizedError':
             // jwt authentication error

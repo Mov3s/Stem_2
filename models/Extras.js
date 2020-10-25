@@ -7,9 +7,9 @@ const ExtrasSchema = new mongoose.Schema({
   landingText: {
     type: String
   },
-  landingImage: {
+  landingImages:[{
     type: String
-  },
+  }],
   OurStory:{
     type: String
   },
