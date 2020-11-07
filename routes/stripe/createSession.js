@@ -49,7 +49,7 @@ async (req, res) => {
 
         if (stripeCustomer.data.length === 0){
           stripeCustomer = await stripe.customers.create({
-            email: email.toString(),
+            email: mCustomer[0].email.toString(),
             name: `${mCustomer[0].firstname} ${mCustomer[0].lastname}`,
           })
         }
@@ -105,6 +105,11 @@ router.post('/guest',
   .isEmpty(),
 ],
 async (req, res) => {
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
     try{
         const {items, email} = req.body

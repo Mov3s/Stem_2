@@ -37,7 +37,8 @@ router.post('/',
             metadata: {integration_check: 'accept_a_payment'},
         });
 
-         console.log('[INTENT]', intent)
+        console.log('[INTENT]', intent)
+        
         res.json({
           client_secret:  intent.client_secret,
           id: intent.id

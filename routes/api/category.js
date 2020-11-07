@@ -98,8 +98,8 @@ router.post(
 );
 
 
-// @route    GET api/categories
-// @desc     gett all products by category 
+// @route    GET api/category
+// @desc     gett all category 
 // @access   private
 router.get(
     '/',
@@ -173,12 +173,11 @@ router.get(
 });
 
 
-// @route    GET api/category
+// @route    GET api/category/:id
 // @desc     gett all products by category 
 // @access   private
 router.get(
   '/:idx',
-  auth,
   async (req, res) => {
 
     try{
