@@ -30,7 +30,7 @@ const connectDB = async () => {
         { _id: "extraId", seq : 1}
       ]
       
-      let idxs = await  Counters.insertMany(entries)
+      await Counters.insertMany(entries)
     }
     
     
