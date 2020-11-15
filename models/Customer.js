@@ -65,13 +65,7 @@ const CustomerSchema = new mongoose.Schema({
     type: Boolean,
     default: false
     //update on sub for newsletter
-},
-  address: {
-      type: String
   },
-  city: {
-      type: String
-  }
 });
 
 

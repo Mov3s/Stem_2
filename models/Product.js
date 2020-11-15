@@ -1,4 +1,5 @@
 const mongoose = require("mongoose")
+const Double = require('@mongoosejs/double');
 const { setHeaderForPartial, base64String } = require("../utils/myUtils")
 
 const ProductSchema = new mongoose.Schema({
@@ -203,21 +204,45 @@ ProductSchema.statics.textSearch = (filter, sort, range, cb) => {
     //return this.where('name', new RegExp(name, 'i')).exec(cb);  
 }
 
+ProductSchema.statics.findByPrice = ( filter, sort, range, cb) => {
+    if(sort[1] === 'ASC') {
+  
+        return Product.find({ 
+                        price: {$lte: filter.price}
+                      }, {_id: 0, __v:0})
+                    .sort(`${sort[0]}`)
+                    .limit(parseInt(range[1]+1, 10))
+                    .exec(cb)
+      }else{
+    
+        return Product.find({ 
+                       price: {$lte: filter.price},
+                      }, {_id: 0, __v:0})
+                    .sort(`-${sort[0]}`)
+                    .limit(parseInt(range[1]+1, 10))
+                    .exec(cb)
+      }
+}
+
 ProductSchema.statics.getByCatgeory = ( category_id, order, page, perPage, sort, cb) =>{
 
     if (order === 'ASC'){
-        return Product.findOne({ "category_id": category_id }, {_id: 0, __v:0})
+        return Product.find({ "category_id": category_id }, {_id: 0, __v:0})
                     .skip((perPage*page) - perPage)
                     .limit(perPage)
                     .sort(sort)
                     .exec(cb)
     }else{
-        return Product.findOne({ "category_id": category_id}, {_id: 0, __v:0})
+        return Product.find({ "category_id": category_id}, {_id: 0, __v:0})
                     .skip((perPage*page) - perPage)
                     .limit(perPage)
                     .sort(-sort)
                     .exec(cb)
     }
+}
+
+ProductSchema.statics.findByCategoryName = (category_name) => {
+    return Product.find({})
 }
 
 

@@ -8,7 +8,7 @@ const ReviewsShema = new mongoose.Schema({
     unique: true
   },
   comment: {
-      type: String,
+    type: String,
   },
   customer_id:{
     type: Number,

@@ -29,13 +29,10 @@ const resizeImage = async (req, res, next ) => {
                 image.size = newBuffer.length
                 req.body.images.push(image)
                 console.log("success")
-
             }),
         )
     }
-
     next();
-    
 }
 
 module.exports = resizeImage

@@ -24,7 +24,8 @@ const Category = require('../../models/Category');
 const Logs = require('../../models/Logs')
 const level = require('../../utils/LogLevel')
 
-const multer = require('multer')
+const multer = require('multer');
+const moment = require('moment');
 const memStorage = multer.memoryStorage()
 var upload = multer({storage: memStorage, limits: {paths: 2, fieldSize: 6000000 , fields: 15, files: 10 }}).fields([{name:'previews'}])
 
@@ -97,6 +98,17 @@ router.get('/', async (req, res, next) => {
                         return res.status(206).json(productList)
                     })
                 }
+
+                if (filter.price){
+                    products = await Product.findByPrice(filter, sort, range)
+                    if (!products) return res.status(404).json("Products not Found")
+                    // console.log("[PRODUCT - QUERY]",products)
+
+                    Product.GetThumbnails(products).then((productList) => {
+                        Product.setContentLimit(res, header, range, count)
+                        return res.status(206).json(productList)
+                    })
+                }
             }
 
             if (filter.category_id){
@@ -126,6 +138,35 @@ router.get('/', async (req, res, next) => {
                 }
 
             } 
+
+            if (filter.category_names && filter.excludeIds ){
+
+                console.log(filter)
+                const categories = await Category.find({ "name": { $in: filter.category_names}})
+               // Category.find().where('name').in(filter.category_names)
+
+                let categoryIds = categories.map(category => category.idx)
+
+                if (filter.excludeIds === undefined)
+                products = await Product.find({
+                    $and: [
+                        {
+                            idx: { 
+                                $nin : filter.excludeIds 
+                            }
+                        },
+                        {
+                            category_id : { $in: categoryIds}
+                        }
+                    ]
+                })
+
+                if (!products) return res.status(400).json("Product not Found")
+
+                Product.GetThumbnails(products).then(productsList => {
+                    return res.status(200).json(productsList)
+                })
+            }
             
             if (filter.id){
         
@@ -137,6 +178,46 @@ router.get('/', async (req, res, next) => {
                     Product.setContentLimit(res, header, range, count)
                     return res.status(206).json(productList)
                 })
+            }
+
+            if(filter.getHighest){
+                console.log(filter)
+                products = await Product.find({}).sort(`-${filter.getHighest}`).limit(5)
+                if(!products) return res.status(404).json("Product not Found")
+
+                console.log("[PRODUCTS ASC BY PRICE]",products)
+                
+                return res.status(206).json({ price : products[0].price })
+            }
+
+            if(filter.category_name){
+
+                let category = await Category.findOne({ name: filter.category_name})
+
+                products = await Product.find({ category_id : category.idx})
+
+                if(!products) return res.status(404).json("Product not Found")
+
+                Product.GetThumbnails(products).then((productList) => {
+                    Product.setContentLimit(res, header, range, count)
+                    return res.status(206).json(productList)
+                })
+            }
+
+            if (filter.new){
+
+                var twoWeeksAgo = moment().subtract(20, 'day');
+                var today = moment()
+
+                products = await Product.find({ date : { $gte: twoWeeksAgo, $lt: today} }).sort(filter.new)
+
+                if(!products) return res.status(404).json("Product not Found")
+                
+                Product.GetThumbnails(products).then((productList) => {
+                    Product.setContentLimit(res, header, range, count)
+                    return res.status(206).json(productList)
+                })
+
             }
 
                
@@ -353,7 +434,7 @@ router.post("/",
 
         const seq = await getNextSequence(mongoose.connection.db, 'productId')
 
-        const cat = await Category.findOne({"idx":category_id})
+        const cat = await Category.findOne({"idx": category_id})
 
         // let base64Arr = []
         // previews.map(prev => { 

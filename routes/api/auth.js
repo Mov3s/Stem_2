@@ -51,7 +51,7 @@ router.post(
       UserService.authenticate({username, password, ipaddress})
       .then(({refreshToken, jwtToken, ...user}) => {
         setTokenCookie(res, refreshToken)
-        res.status(200).json({
+        return res.status(200).json({
           user,
           jwtToken
         })

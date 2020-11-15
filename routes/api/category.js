@@ -173,21 +173,25 @@ router.get(
 });
 
 
-// @route    GET api/category/:id
-// @desc     gett all products by category 
+// @route    GET api/category/:q
+// @desc     gett category by name or by id 
 // @access   private
 router.get(
-  '/:idx',
+  '/:q',
   async (req, res) => {
 
     try{
 
-      const category = await Category.findOne({"idx": req.params.idx},{date: 0, __v: 0})
-  
-      if (category === null || category === undefined || category.length === 0){
-  
-          return res.status(400).json("No Category Exists")
+      const queryString = req.params.q
+      let category
+      if (/^[A-Za-z]+$/.test(queryString)){
+        category = await Category.findOne({"name": queryString},{date: 0, __v: 0})
+      }else{
+        category = await Category.findOne({"idx": queryString},{date: 0, __v: 0})
+      }
 
+      if (category === null || category === undefined || category.length === 0){
+        return res.status(400).json("No Category Exists")
       }
 
       res.status(200).json(category)
@@ -200,7 +204,6 @@ router.get(
 
   }
 );
-
 
 // @route    PUT api/categories/:idx
 // @desc     Edit single Category

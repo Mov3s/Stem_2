@@ -7,6 +7,10 @@ const User = require('../models/User')
 const RefreshToken = require('../models/RefreshToken')
 
 const secret = config.get('jwtSecret')
+const { getNextSequence } = require('../utils/myUtils')
+
+
+
 
 const authenticate = async ({ username, password, ipAddress }) => {
 
@@ -33,6 +37,50 @@ const authenticate = async ({ username, password, ipAddress }) => {
         jwtToken : jwtToken,
         refreshToken: refreshToken.token
     };
+}
+
+const registerUser = async ({email, password, password2, ipAddress }) => {
+
+    let user = await User.findOne({ email });
+
+    if (user) {
+       throw 'User already exist'
+    }
+
+    if (password !== password2){
+        throw 'Passwords must match'
+    } 
+
+    const seq = await getNextSequence(mongoose.connection.db, 'userId')
+    user = new User({
+        idx: seq,
+        email,
+        password,
+        // isAdmin : isAdmin ? isAdmin : false
+    });
+
+    const salt = await bcrypt.genSalt(10);
+
+    user.password = await bcrypt.hash(password, salt);
+
+    await user.save();
+
+    // registration successful so generate jwt and refresh tokens
+    const jwtToken = generateJwtToken(user);
+    const refreshToken = generateRefreshToken(user, ipAddress);
+
+    // save refresh token
+    await refreshToken.save();
+
+    console.log('[FFROM REGISTER]',refreshToken)
+
+    // return basic details and tokens
+    return { 
+        ...basicDetails(user),
+        jwtToken : jwtToken,
+        refreshToken: refreshToken.token
+    };
+
 }
 
 const refreshToken = async ({ token, ipAddress }) => {
@@ -141,4 +189,5 @@ module.exports = {
     generateRefreshToken, 
     generateJwtToken,
     basicDetails,
+    registerUser
 };

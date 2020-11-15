@@ -1,7 +1,8 @@
 {
-    "mongoURI": "mongodb+srv://devStem:ce819TAonZa43W4X@devstemcluster-okfqb.mongodb.net/testDB3?retryWrites=true&w=majority",
+    "mongoURI": "mongodb+srv://admin:2B2721admin@inphinityx.plxbq.mongodb.net/Stem?retryWrites=true&w=majority",
     "jwtSecret": "secret",
     "githubClientId": "",
     "githubSecret": ""
 }
-  
+
+
