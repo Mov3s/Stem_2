@@ -122,7 +122,7 @@ router.get('/', async (req, res, next) => {
         
     } catch (error) {
         console.log(error)
-        Logs.addLog(level.error, error.message, error)
+        Logs.addLog(level.level.error, error.message, error)
         const key = level.error
         res.status(500).json({key : error.message})
     }
@@ -199,7 +199,7 @@ router.get('/:id', async (req, res) => {
         })
 
     }catch(error){
-      Logs.addLog(level.error, error.message, error)
+      Logs.addLog(level.level.error, error.message, error)
       const key = level.error
       res.status(500).json({key : error.message})
     }
@@ -256,7 +256,7 @@ router.post('/',
                 readableVideoStream.push(null);
                 readableVideoStream.pipe(videoBucket.openUploadStream(videoNames[index]))
                 .on('error', (error) => {
-                    Logs.addLog(level.error, error.message, error)
+                    Logs.addLog(level.level.error, error.message, error)
                     return res.status(500).send(error.message)
                 })
                 .on('finish', () => {
@@ -280,11 +280,11 @@ router.post('/',
 
                 readablePhotoStream.pipe(bucket.openUploadStream(imageNames[index]))
                 .on('error', (error) => {
-                    Logs.addLog(level.error, error.message, error)
+                    Logs.addLog(level.level.error, error.message, error)
                     return res.status(500).send(error.message + '<<<<<' )
                 })
                 .on('finish', () => {
-                    Logs.addLog(level.info, `Upload Success - ${imageNames[index]}`, '')
+                    Logs.addLog(level.level.info, `Upload Success - ${imageNames[index]}`, '')
                     //next()
                 })
             })
@@ -307,9 +307,8 @@ router.post('/',
         return res.status(200).json(newBlog)
       
     } catch (error) {
-        Logs.addLog(level.error, error.message, error)
-        const key = level.error
-        res.status(500).json({key : error.message})
+        Logs.addLog(level.level.error, error.message, error)
+        return res.status(500).json({error : error.message})
     }
 })
 
@@ -346,7 +345,7 @@ router.delete('/:id', auth, async (req, res) => {
                             data.forEach(data => {
                                 imageBucket.delete(data._id, (err) => {
                                     if(!err){
-                                        Logs.addLog(level.info, 'Image Delete successful', '')
+                                        Logs.addLog(level.level.info, 'Image Delete successful', '')
                                     }
                                 })
                              })
@@ -364,7 +363,7 @@ router.delete('/:id', auth, async (req, res) => {
                             data.forEach(data => {
                                 videoBucket.delete(data._id, (err) => {
                                     if(!err){
-                                        Logs.addLog(level.info, 'Video Delete successful', '')
+                                        Logs.addLog(level.level.info, 'Video Delete successful', '')
                                     }
                                 })
                             })
@@ -378,9 +377,8 @@ router.delete('/:id', auth, async (req, res) => {
         res.json({"Message" : "Blog Deleted Deleted"})
 
     }catch(err){
-        Logs.addLog(level.error, error.message, error)
-        const key = level.error
-        res.status(500).json({key : error.message})
+        Logs.addLog(level.level.error, error.message, error)
+        return res.status(500).json({error : error.message})
     }
 })
 
@@ -424,7 +422,7 @@ router.delete('/', auth, async (req, res) => {
                             imageBucket.delete(data._id, (err) => {
                                logError(err)
                                 console.log(data)
-                               Logs.addLog(level.info, 'Image Delete successful', '')
+                               Logs.addLog(level.level.info, 'Image Delete successful', '')
 
                             })
                         })
@@ -444,7 +442,7 @@ router.delete('/', auth, async (req, res) => {
                                logError(err)
 
                                console.log(data)
-                               Logs.addLog(level.info, 'Video Delete successful', '')
+                               Logs.addLog(level.level.info, 'Video Delete successful', '')
                                 
                             })
                         })
@@ -461,9 +459,8 @@ router.delete('/', auth, async (req, res) => {
         res.status(200).json({"Message" : "Blog Deleted Deleted"})
 
     }catch(err){
-        Logs.addLog(level.error, error.message, error)
-        const key = level.error
-        res.status(500).json({key : error.message})
+        Logs.addLog(level.level.error, error.message, error)
+        return res.status(500).json({error : error.message})
     }
 })
 
@@ -523,11 +520,11 @@ router.put('/',
                     readableVideoStream.push(null);
                     readableVideoStream.pipe(videoBucket.openUploadStream(generateUniqueName(video.originalname)))
                     .on('error', (error) => {
-                        Logs.addLog(level.error, error.message, error)
+                        Logs.addLog(level.level.error, error.message, error)
                         return res.status(500).send(error.message)
                     })
                     .on('finish', () => {
-                        Logs.addLog(level.info, 'Upload Success - {}', '')
+                        Logs.addLog(level.level.info, 'Upload Success - {}', '')
                         //next()
                     })
                 })
@@ -546,11 +543,11 @@ router.put('/',
     
                     readablePhotoStream.pipe(bucket.openUploadStream(generateUniqueName(image.originalname)))
                     .on('error', (error) => {
-                        Logs.addLog(level.error, error.message, error)
+                        Logs.addLog(level.level.error, error.message, error)
                         return res.status(500).send(error.message + '<<<<<' )
                     })
                     .on('finish', () => {
-                        Logs.addLog(level.info, 'Upload Success - {}', '')
+                        Logs.addLog(level.level.info, 'Upload Success - {}', '')
                         //next()
                     })
                 })
@@ -567,9 +564,8 @@ router.put('/',
             return res.status(200).json(blog)
           
         } catch (error) {
-            Logs.addLog(level.error, error.message, error)
-            const key = level.error
-            res.status(500).json({key : error.message})
+            Logs.addLog(level.level.error, error.message, error)
+            return res.status(500).json({error : error.message})
         }
 
 

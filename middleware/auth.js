@@ -21,31 +21,32 @@ const auth = async (req, res, next) => {
 
   //verifytoken with jsonwebtoken
   try {
-        await jwt.verify(token, secret, (error, decoded) => {
+        await jwt.verify(token, secret, async (error, decoded) => {
             if(error){
 
               if (error.message === 'jwt expired'){
-                Logs.addLog(level.error, error.message, error)
+                Logs.addLog(level.level.error, error.message, error)
                 return res.status(401).json({ msg: error.message });
               }
 
-              Logs.addLog(level.error, error.message, error)
+              Logs.addLog(level.level.error, error.message, error)
               return res.status(401).json({ msg: 'Invalid Authorization Token' });
             }
             
             req.user = {}
             req.user.id = decoded.id
         
-            const user =  User.findById(req.user.id)
+            const user = await User.findById(req.user.id)
 
             if (!user){
-              Logs.addLog(level.error, "UNAUTHORIZED ACCESS", error.message)
+              Logs.addLog(level.level.error, "UNAUTHORIZED ACCESS", error.message)
               return res.status(401).json({message: err.message})
             }else{
               // req.user.isAdmin = user.isAdmin ? user.isAdmin : false
               const refreshToken = RefreshToken.find({user: user._id})
               req.user.ownsToken = token => !!refreshToken.find(x => x.token === token);
-              Logs.addLog(level.info, `USER - ${ user.id } AUTHENTICATED`, '')
+
+              Logs.addLog(level.level.info, `User AUTHENTICATED: Idx - ${ user.idx }`, '')
             }
 
             next();

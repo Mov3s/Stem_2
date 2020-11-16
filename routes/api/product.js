@@ -141,7 +141,7 @@ router.get('/', async (req, res, next) => {
 
             if (filter.category_names && filter.excludeIds ){
 
-                console.log(filter)
+                // console.log(filter)
                 const categories = await Category.find({ "name": { $in: filter.category_names}})
                // Category.find().where('name').in(filter.category_names)
 
@@ -181,11 +181,11 @@ router.get('/', async (req, res, next) => {
             }
 
             if(filter.getHighest){
-                console.log(filter)
+                // console.log(filter)
                 products = await Product.find({}).sort(`-${filter.getHighest}`).limit(5)
                 if(!products) return res.status(404).json("Product not Found")
 
-                console.log("[PRODUCTS ASC BY PRICE]",products)
+                // console.log("[PRODUCTS ASC BY PRICE]",products)
                 
                 return res.status(206).json({ price : products[0].price })
             }
@@ -224,8 +224,8 @@ router.get('/', async (req, res, next) => {
         }
         
     } catch (error) {
-        console.log(error)
-        res.status(500).json("Server Error Retrieving data")
+        // console.log(error)
+        return res.status(500).json({ error: error.message})
     }
 })
 
@@ -270,8 +270,8 @@ router.get('/:idx', async (req, res, next) => {
         })
 
     } catch (error) {
-        console.log(error)
-        res.status(500).json(error.message)
+        // console.log(error)
+        return res.status(500).json(error.message)
     }
 })
 
@@ -320,7 +320,7 @@ router.put('/',
                 fileCollection.find({ filename: prev }).toArray((err, data) => {
                     data.forEach(dat => {
                         productBucket.delete(dat._id, (err) => {
-                            console.log("deleted previous images")
+                            // console.log("deleted previous images")
                         })
                     })
                 })   
@@ -339,7 +339,7 @@ router.put('/',
                     return res.status(500).send(error.message + '<<<<<' )
                 })
                 .on('finish', () => {
-                    console.log('Successfully uploaded img')
+                    // console.log('Successfully uploaded img')
                 })
             })
 
@@ -373,8 +373,8 @@ router.put('/',
         res.status(200).json(product);
         
     } catch (error) {
-        console.log(error);
-        res.status(500).json({"server Error": error.message});
+        // console.log(error);
+        return res.status(500).json({error: error.message});
     }
 })
 
@@ -428,7 +428,7 @@ router.post("/",
                 res.status(500).send(error.message + '<<<<<' )
             })
             .on('finish', () => {
-                console.log('Successfully uploaded img')
+                // console.log('Successfully uploaded img')
             })
         })
 
@@ -459,7 +459,7 @@ router.post("/",
         
         const newProduct = await product.save();
         //Logs.addLog() - INFO
-        console.log("[NEWPRODUCT SAVED TO MONGO]", newProduct.idx)
+        // console.log("[NEWPRODUCT SAVED TO MONGO]", newProduct.idx)
 
         const stripeProduct = await stripe.products.create({
             id: newProduct.idx,
@@ -473,7 +473,7 @@ router.post("/",
                 size: newProduct.size,
             }
         });
-        console.log(stripeProduct)
+        // console.log(stripeProduct)
         //Logs.addLog() - INFO
 
         const stripePrice = await stripe.prices.create({
@@ -492,7 +492,7 @@ router.post("/",
         return res.status(201).json({updatedStripeProduct, ...stripePrice});
 
     } catch (error) {
-        console.log(error)
+        // console.log(error)
         return res.status(500).json({error: error.message})
     }
 })
@@ -524,7 +524,7 @@ router.delete('/:id', auth, async (req, res) => {
                     data.forEach(data => {
                         previewBucket.delete(data._id, (err) => {
                            logError(err)
-                            console.log("Delete succesful")
+                            // console.log("Delete succesful")
                         })
                     })
                 })
@@ -535,8 +535,8 @@ router.delete('/:id', auth, async (req, res) => {
         res.json({"Message" : "Product Deleted"})
 
     }catch(err){
-        console.log(err);
-        res.status(500).send({"Error" : err.message})
+        // console.log(err);
+        res.status(500).send({error : err.message})
     }
 })
 
@@ -570,7 +570,7 @@ router.delete('/:id/:imagename', auth, async (req, res) => {
             data.forEach(data => {
                 previewBucket.delete(data._id, (err) => {
                     logError(err)
-                    console.log("File Deleted succesfully")
+                    // console.log("File Deleted succesfully")
                    
                 })
             })
@@ -583,8 +583,8 @@ router.delete('/:id/:imagename', auth, async (req, res) => {
         res.status(200).json({"Message" : "Product IMAGES updated"})
 
     }catch(err){
-        console.log(err.message);
-        res.status(500).send("Server Error...")
+        // console.log(err.message);
+        return res.status(500).send({ error: err.message})
     }
 })
 

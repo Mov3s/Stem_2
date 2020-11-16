@@ -16,7 +16,7 @@ const authenticate = async ({ username, password, ipAddress }) => {
 
     const user = await User.findOne({ email: username });
 
-    console.log("[USER FFROM AUTHENTICATE]",user)
+    // console.log("[USER FFROM AUTHENTICATE]",user)
 
     if (!user || !bcrypt.compare(password, user.password)) {
         throw 'Username or password is incorrect';
@@ -29,7 +29,7 @@ const authenticate = async ({ username, password, ipAddress }) => {
     // save refresh token
     await refreshToken.save();
 
-    console.log('[FFROM AUTH]',refreshToken)
+    // console.log('[FFROM AUTH]',refreshToken)
 
     // return basic details and tokens
     return { 
@@ -72,7 +72,7 @@ const registerUser = async ({email, password, password2, ipAddress }) => {
     // save refresh token
     await refreshToken.save();
 
-    console.log('[FFROM REGISTER]',refreshToken)
+    // console.log('[FFROM REGISTER]',refreshToken)
 
     // return basic details and tokens
     return { 
@@ -145,7 +145,7 @@ async function getUser(id) {
 
 const getRefreshToken =  async (refreshTok) => {
     const refreshToken = await RefreshToken.findOne({ "token": refreshTok }).populate('users');
-    console.log('[GETREFRESHTOKEN]', refreshToken)
+    // console.log('[GETREFRESHTOKEN]', refreshToken)
     if (!refreshToken || !refreshToken.isActive) throw 'Invalid token';
     return refreshToken;
 }
@@ -153,13 +153,13 @@ const getRefreshToken =  async (refreshTok) => {
 const generateJwtToken = (user) => {
     // create a jwt token containing the user id that expires in 3hrs  
     const tk = jwt.sign({ sub: user.id, id: user.id }, secret, { expiresIn: '3h' });
-    console.log('[NEWJWT]👉🏾👉🏾👉🏾', tk)
+    // console.log('[NEWJWT]👉🏾👉🏾👉🏾', tk)
     return tk
 }
 
 const generateRefreshToken = (user, ipAddress) => {
     const tk = randomTokenString()
-    console.log('[NEWREFRESHTOKEN]',tk)
+    // console.log('[NEWREFRESHTOKEN]',tk)
     // create a refresh token that expires in 7 days
     return new RefreshToken({
         user: user.id,

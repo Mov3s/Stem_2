@@ -23,7 +23,7 @@ router.get('/', auth, async (req, res, next) => {
     res.json(user);
   } catch (err) {
     console.log(err);
-    res.status(500).send('Server Error');
+    res.status(500).send({ message: e.message });
   }
 });
 
@@ -58,8 +58,8 @@ router.post(
       }).catch(next)
 
     } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server error');
+      // console.error(err.message);
+      res.status(500).send({  message: err.message });
     }
   }
 );
@@ -103,7 +103,7 @@ router.post('/refresh-token', async (req, res, next) => {
       })
 
     } catch (err) {
-      console.error(err);
+      // console.error(err);
       res.status(500).send(err.message);
     }
   }
@@ -126,16 +126,16 @@ router.post('/revoke-token', auth, async (req, res, next) => {
         const refreshToken = await UserService.getRefreshToken(token);
 
         // revoke token and save
-        console.log("[BEFRORE]", refreshToken)
+        // console.log("[BEFRORE]", refreshToken)
         refreshToken.revoked = Date.now();
         refreshToken.revokedByIp = ipaddress;
         await refreshToken.save();
 
-        console.log("[AFTER]", refreshToken)
+        // console.log("[AFTER]", refreshToken)
 
         res.status(200).json({ message: 'Token revoked' })
     }catch(e){
-        console.log("[ERROR REVOKING TOKEN]", err )
+        // console.log("[ERROR REVOKING TOKEN]", err )
         res.status(500).json({ message: e.message })
     }
 
