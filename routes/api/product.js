@@ -489,7 +489,8 @@ router.post("/",
         );
 
         // 
-        return res.status(201).json({updatedStripeProduct, ...stripePrice});
+        // return res.status(201).json({updatedStripeProduct, ...stripePrice});
+        return res.status(201).json(newProduct)
 
     } catch (error) {
         // console.log(error)

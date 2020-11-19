@@ -21,7 +21,7 @@ const { getNextSequence, base64String, generateUniqueName } = require('../../uti
 const multer = require('multer')
 const memStorage = multer.memoryStorage()
 //fieldSize = 6mb
-var upload = multer({storage: memStorage, limits: {fieldSize: 6000000 , fields: 5, files: 3 }}).fields([{name:'image'}])
+var upload = multer({storage: memStorage, limits: {fieldSize: 6000000 , fields: 5, files: 3 }}).fields([{name:'images'}])
 
 
 // @route    GET api/extra
@@ -33,7 +33,7 @@ router.get('/', async (req, res, next) => {
         // const { text, image, story} = req.body
         var extras = await Extras.find({}, {__v:0, _id: 0})
         
-        if (!extras || extras.length == 0) return res.status(500).json("No Data")
+        if (!extras || extras.length == 0) return res.status(500).json("No data")
 
         const imageNames = extras.map(img => img.landingImages)
         console.log(imageNames)
@@ -46,7 +46,7 @@ router.get('/', async (req, res, next) => {
  
         for (let image of imageNames[0]){
             
-            const ress = await imageFilesCollecttion.find({filename:image}).toArray()
+            const ress = await imageFilesCollecttion.find({ filename : image}).toArray()
 
             if(ress.length === 0 || ress === undefined){
                 console.log("Here")
@@ -54,7 +54,7 @@ router.get('/', async (req, res, next) => {
             }
  
             var ext = ress[0].filename.split('.')[1]
-            console.log(ress[0])
+            // console.log(ress[0])
             const chunks = await imageChunksCollecttion.find({ files_id: mongoose.Types.ObjectId(ress[0]._id) }).toArray()
 
             var chunksJSON = JSON.parse(JSON.stringify(chunks))
@@ -66,7 +66,7 @@ router.get('/', async (req, res, next) => {
         extras = JSON.parse(JSON.stringify(extras))
         extras[0].base64 = base64Images
         
-        return res.status(200).json(extras[0])
+        return res.status(200).json([extras[0]])
 
     } catch (error) {
         console.log(error)
@@ -77,12 +77,58 @@ router.get('/', async (req, res, next) => {
 })
 
 
+// @route    GET api/extra
+// @desc     Get extras in db
+// @access   Public
+router.get('/:id', async (req, res, next) => {
+    try {
+
+        // const { text, image, story} = req.body
+        var extra = await Extras.findOne({ idx: req.params.id}, {__v:0, _id: 0})
+        if (!extra) return res.status(500).json("No data")
+
+        const imageNames = extra.landingImages.map(img => img)
+
+        const imageChunksCollecttion =  mongoose.connection.db.collection("LandingImages.chunks")
+        const imageFilesCollecttion =  mongoose.connection.db.collection("LandingImages.files")
+ 
+        var base64Images = []
+ 
+        for (let image of imageNames){
+            
+            const ress = await imageFilesCollecttion.find({ filename : image}).toArray()
+
+            if(!ress || ress.length === 0){
+                console.log("Here")
+                continue
+            }
+            var ext = ress[0].filename.split('.')[1]
+            const chunks = await imageChunksCollecttion.find({ files_id: mongoose.Types.ObjectId(ress[0]._id) }).toArray()
+
+            var chunksJSON = JSON.parse(JSON.stringify(chunks))
+ 
+            base64Images.push(base64String(chunksJSON[0].data, ext))
+             
+        }
+
+        extra = JSON.parse(JSON.stringify(extra))
+        extra.base64 = base64Images
+        return res.status(200).json(extra)
+
+    } catch (error) {
+        console.log(error)
+        Logs.addLog(level.error, error.message, error)
+        const key = level.error
+        res.status(500).json({[key] : error.message})
+    }
+})
+
 // @route    POST api/extra
 // @desc     Add extra to db 
-// @access   Public
+// @access   Private
 router.post('/', 
     [
-        // auth, 
+        auth, 
         upload,
         [
             //for express-validator
@@ -96,9 +142,10 @@ router.post('/',
 
     try {
 
-        const { landing, ourstory } = req.body 
+        const { landingText, OurStory } = req.body 
 
-        const image = req.files['image']
+        console.log(req.body)
+        const image = req.files['images']
 
         console.log(" Image Size", image)
 
@@ -133,9 +180,9 @@ router.post('/',
 
         const extra = new Extras({
             idx: seq,
-            landingText: landing,
+            landingText: landingText,
             landingImages: imageNames,
-            OurStory: ourstory,
+            OurStory: OurStory,
         })
 
         const newExta = await extra.save()
@@ -143,6 +190,7 @@ router.post('/',
         return res.status(200).json(newExta)
       
     } catch (error) {
+        console.log(error)
         Logs.addLog(level.error, error.message, error)
         const key = level.error
         res.status(500).json({[key] : error.message})
@@ -152,9 +200,10 @@ router.post('/',
 
 // @route Edit api/extra/
 // @desc Edit extras 
+// @access   Private
 router.put('/', 
     [
-        // auth, 
+        auth, 
         upload,
         [
   
@@ -167,8 +216,11 @@ router.put('/',
         }
         try {
     
-            const { idx, landing, ourstory } = req.body   //Add Teaser
-            const image = req.files['image']
+            const { idx, landingText, OurStory } = req.body   //Add Teaser
+            const image = req.files['images']
+
+            console.log(req.body)
+            console.log(image)
            
             const extra = await Extras.findOne({ idx: idx}, {__v:0})
 
@@ -213,7 +265,7 @@ router.put('/',
                             return res.status(500).send(error.message + '<<<<<' )
                         })
                         .on('finish', () => {
-                            Logs.addLog(level.info, 'Upload Success - {}', '')
+                            Logs.addLog(level.info, `Images Uploaded for Extra - ${extra.idx}`, '')
                             console.log(`Successfully updated images - ${imageNames[index]}`)
                             //next()
                         })
@@ -221,21 +273,73 @@ router.put('/',
                 }
             }
 
-            extra.landingText = landing ? landing : extra.landingText
+            extra.landingText = landingText ? landingText : extra.landingText
             extra.landingImages = imageNames ? imageNames : extra.landingImages
-            extra.OurStory = ourstory ? ourstory : extra.OurStory
+            extra.OurStory = OurStory ? OurStory : extra.OurStory
 
             await extra.save()
-    
             return res.status(200).json(extra)
           
         } catch (error) {
             Logs.addLog(level.error, error.message, error)
             const key = level.error
-            res.status(500).json({key : error.message})
+            res.status(500).json({ error : error.message})
         }
 
 });
 
+
+// @route delete api/extra/:id
+// @desc delete extras 
+// @access   Private
+router.delete('/:id', 
+    [
+        auth, 
+        upload,
+        [ ]
+    ], async (req, res, next) => {
+
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+          return res.status(400).json({ errors: errors.array() });
+        }
+        try {
+    
+            const extra = await Extras.findOne({ idx: req.params.id}, {__v:0})
+
+            if (!extra){
+                return res.status(404).json({NotFound: "Extra doesn't exist"})
+            }
+
+            const extrasFileCollection = mongoose.connection.db.collection('LandingImages.files')
+            const bucket = new mongodb.GridFSBucket(mongoose.connection.db, {
+                bucketName: 'LandingImages'
+            });
+
+            extra.landingImages.forEach(image => {
+                extrasFileCollection.find({ filename: image }).toArray((err, data) => {
+                    if (err) console.log(err)
+                    data.forEach(dat => {
+                        bucket.delete(dat._id, (err) => {
+                            console.log("deleted extras image")
+                        })
+                    })
+                })   
+            })
+
+            await extra.remove()
+
+            return res.status(200).json({success: `Extra - ${extra.idx} Deleted`})
+
+        }catch(e){
+            Logs.addLog(level.error, error.message, error)
+            const key = level.error
+            res.status(500).json({ error : error.message})
+        }
+})
+
 module.exports = router;
+
+
+
 
