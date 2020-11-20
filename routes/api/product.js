@@ -220,6 +220,9 @@ router.get('/', async (req, res, next) => {
 
             }
 
+            // if (){
+            //       // {"sales_lte":10,"sales_gt":0}&order=ASC&page=1&perPage=20&sort=reference
+            // }
                
         }
         

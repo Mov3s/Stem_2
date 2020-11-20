@@ -142,7 +142,7 @@ router.post('/',
 
     try {
 
-        const { landingText, OurStory } = req.body 
+        const { landingText, aboutUs } = req.body 
 
         console.log(req.body)
         const image = req.files['images']
@@ -182,7 +182,7 @@ router.post('/',
             idx: seq,
             landingText: landingText,
             landingImages: imageNames,
-            OurStory: OurStory,
+            aboutUs: aboutUs,
         })
 
         const newExta = await extra.save()
@@ -216,7 +216,7 @@ router.put('/',
         }
         try {
     
-            const { idx, landingText, OurStory } = req.body   //Add Teaser
+            const { idx, landingText, aboutUs } = req.body   //Add Teaser
             const image = req.files['images']
 
             console.log(req.body)
@@ -275,7 +275,7 @@ router.put('/',
 
             extra.landingText = landingText ? landingText : extra.landingText
             extra.landingImages = imageNames ? imageNames : extra.landingImages
-            extra.OurStory = OurStory ? OurStory : extra.OurStory
+            extra.aboutUs = aboutUs ? aboutUs : extra.aboutUs
 
             await extra.save()
             return res.status(200).json(extra)

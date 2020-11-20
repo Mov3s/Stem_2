@@ -10,7 +10,7 @@ const ExtrasSchema = new mongoose.Schema({
   landingImages:[{
     type: String
   }],
-  OurStory:{
+  aboutUs:{
     type: String
   },
   date: {
