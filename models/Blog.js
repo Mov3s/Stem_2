@@ -247,7 +247,9 @@ BlogSchema.statics.textSearch = (filter, sort, range, cb) => {
   }
 }
 
-module.exports = Blog = mongoose.model('blog', BlogSchema);
 
+const Blog = mongoose.model('blog', BlogSchema);
+
+module.exports = Blog
 
 //Add find chunks for Blog tyo all custom static methods

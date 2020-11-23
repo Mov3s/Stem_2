@@ -141,25 +141,26 @@ router.get('/', async (req, res, next) => {
 
             if (filter.category_names && filter.excludeIds ){
 
-                // console.log(filter)
+                
                 const categories = await Category.find({ "name": { $in: filter.category_names}})
                // Category.find().where('name').in(filter.category_names)
 
                 let categoryIds = categories.map(category => category.idx)
 
-                if (filter.excludeIds === undefined)
-                products = await Product.find({
-                    $and: [
-                        {
-                            idx: { 
-                                $nin : filter.excludeIds 
+                if (filter.excludeIds !== undefined){
+                    products = await Product.find({
+                        $and: [
+                            {
+                                idx: { 
+                                    $nin : filter.excludeIds 
+                                }
+                            },
+                            {
+                                category_id : { $in: categoryIds}
                             }
-                        },
-                        {
-                            category_id : { $in: categoryIds}
-                        }
-                    ]
-                })
+                        ]
+                    })
+                }
 
                 if (!products) return res.status(400).json("Product not Found")
 
@@ -217,7 +218,19 @@ router.get('/', async (req, res, next) => {
                     Product.setContentLimit(res, header, range, count)
                     return res.status(206).json(productList)
                 })
+            }
 
+            if (filter.featured){
+                console.log(filter)
+                products = await Product.find({ featured : true }).limit(5)
+
+                if(!products) return res.status(404).json("Product not Found")
+                console.log(products.length)
+                
+                Product.GetThumbnails(products).then((productList) => {
+                    Product.setContentLimit(res, header, range, count)
+                    return res.status(206).json(productList)
+                })
             }
 
             // if (){
@@ -300,7 +313,7 @@ router.put('/',
 
     try {
 
-        const {idx, name, price, stock, benefits, ingredients, size, category_id, sales, reference } = req.body;
+        const {idx, name, price, stock, benefits, ingredients, size, featured, category_id, sales, reference } = req.body;
 
         const product = await Product.findOne({"idx": idx})
 
@@ -346,6 +359,7 @@ router.put('/',
                 })
             })
 
+           
             product.name = name ? name : product.name;
             product.price = price ? price : product.price;
             product.stock = stock ? stock : product.stock;
@@ -355,6 +369,7 @@ router.put('/',
             product.category_id = category_id ? category_id : product.category_id;
             product.sales = sales ? sales : product.sales;
             product.reference = reference ? reference : product.reference;
+            product.featured = featured ? featured : product.featured
             product.previews = previewImageNames
 
         }else{
@@ -367,6 +382,7 @@ router.put('/',
             product.size = size ? size : product.size;
             product.category_id = category_id ? category_id : product.category_id;
             product.reference = reference ? reference : product.reference;
+            product.featured = featured ? featured : product.featured
             product.sales = sales ? sales : product.sales;
 
         }
@@ -410,7 +426,7 @@ router.post("/",
 
     try {
         
-        const {name, price, stock, benefits, ingredients, size, category_id, sales, reference, images } = req.body;
+        const {name, price, stock, benefits, ingredients, size, category_id, sales, reference, featured, images } = req.body;
 
         const previews = images
         
@@ -457,6 +473,7 @@ router.post("/",
             size: size,
             category_id: cat.idx,
             sales: sales,
+            featured : featured ? featured : false,
             previews: previewImageNames
         })
         

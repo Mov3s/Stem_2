@@ -24,7 +24,7 @@ router.post(
   [
     auth, 
     [
-    check('comment', 'Please include a valid comment for review')
+    check('rating', 'Please include a rating for product')
     .not()
     .isEmpty()
     ]
@@ -37,15 +37,19 @@ router.post(
     }
 
     try {
-
-        const userId = req.user.id
-        const { comment, rating, reference  } = req.body
-
-        const customer =  await Customer.findOne({"user_id": userId}, { __v: 0, _id: 0})
         
-        if(!customer) return res.status(404).json("Register to leave review")
+        const { comment, rating, id  } = req.body
 
-        const product = await Products.findOne({ reference: reference}, {__v:0, _id: 0})
+        let customerId
+        const userId = req.user.id
+        // console.log(userId)
+
+        if (userId){
+          const customer =  await Customer.findOne({"user_id": userId}, { __v: 0, _id: 0})
+          if (customer){ customerId = customer.idx}
+        }
+        
+        const product = await Products.findOne({ idx: id}, {__v:0, _id: 0})
 
         if(!product) return res.status(404).json("Product doesn't exist")
 
@@ -53,19 +57,21 @@ router.post(
 
         const newReview = new Reviews({
             idx: seq,
-            comment: comment,
+            comment: comment ? comment : '',
             rating: rating,
             product_id: product.idx,
-            customer_id: customer.idx,
+            customer_id: customerId ? customerId : 9999999,//exclude this field when  customer_id = 9999999 
         })
 
         await newReview.save();
-
-        res.status(200).json(newReview)
+        return res.status(200).json({ 
+          success: true, 
+          message: 'Review Created Successfully' 
+        })
 
     }catch(err) {
-      console.log(err)
-      res.status(500).json(err.message)
+      // console.log(err)
+      return res.status(500).json(err.message)
     }
   }
 );
@@ -102,58 +108,44 @@ router.get(
 
 
         }else{
-
           if(range && sort){
-
             if (Object.keys(filter).length === 0){
-
                 reviews = await Reviews.sort(sort, range)
                 if (!reviews) return res.status(404).json("Reviews not found")
-                console.log("[REVIEWS - SORT]", reviews.length)
+                // console.log("[REVIEWS - SORT]", reviews.length)
                 Reviews.setContentLimit(res, header, range, count)
                 return res.status(206).json(reviews)
-
             }
 
             if (Object.keys(filter).length > 0 && filter.q){
-              
                 reviews = await Reviews.textSearch(filter, sort, range)
                 if (!reviews) return res.status(404).json("Reviews not Found")
-                console.log("[REVIEWS - QUERY]", reviews)
+                // console.log("[REVIEWS - QUERY]", reviews)
                 Reviews.setContentLimit(res, header, range, count)
                 return res.status(206).json(reviews)
-
-
             }
 
             if (Object.keys(filter).length > 0 && filter.customer_id){
                 
                 reviews = await Reviews.find({ customer_id: filter.customer_id }, {__v: 0, _id: 0})
                 if (!reviews) return res.status(404).json("Reviews not Found")
-                console.log("[REVIEWS - QUERY(customer_id)]", reviews)
+                // console.log("[REVIEWS - QUERY(customer_id)]", reviews)
                 Reviews.setContentLimit(res, header, range, count)
                 return res.status(206).json(reviews)
-
-
             }
 
             if (Object.keys(filter).length > 0 && filter.product_id){
-                
                 reviews = await Reviews.find({ product_id: filter.product_id }, {__v: 0, _id: 0})
                 if (!reviews) return res.status(404).json("Reviews not Found")
-                console.log("[REVIEWS - QUERY(product_id)]", reviews)
+                // console.log("[REVIEWS - QUERY(product_id)]", reviews)
                 Reviews.setContentLimit(res, header, range, count)
                 return res.status(206).json(reviews)
-
-
             }
-
           }
         }
-
       }catch(err){
-            console.log(err)
-            res.status(500).json(err.message)
+            // console.log(err)
+        return res.status(500).json(err.message)
       }
     
 });
@@ -177,13 +169,12 @@ router.get(
 
       }
 
-      res.status(200).json(review)
+      return res.status(200).json(review)
 
     }catch(error){
-      console.log(error)
-      res.status(500).json(error.message)
+      // console.log(error)
+      return res.status(500).json(error.message)
     }
-
   }
 );
 
@@ -222,8 +213,8 @@ router.put('/:idx',
       res.status(200).json(review)
 
     }catch(err){
-      console.log(err)
-      res.status(500).json(err)
+      // console.log(err)
+      return res.status(500).json(err)
     }
 
 })
@@ -245,11 +236,11 @@ router.delete('/:idx', auth, async (req, res, next) => {
 
     const deletedReview =  await Reviews.findOneAndDelete({"idx": idx})
 
-    res.status(200).json({"Deleted": deletedReview})
+    return res.status(200).json({"Deleted": deletedReview})
 
   }catch(error) {
-    console.log(error)
-    res.status(500).json(error.message)
+    // console.log(error)
+    return res.status(500).json(error.message)
   }
 
 })
@@ -272,11 +263,11 @@ router.delete('/', auth, async (req, res) => {
         }
 
         await Reviews.deleteMany({idx: { $in : filter.id}});
-        res.status(200).json({"Message" : "Reviews Deleted Deleted"})
+        return res.status(200).json({"Message" : "Reviews Deleted Deleted"})
 
     }catch(err){
-        console.log(err);
-        res.status(500).send(err.message)
+        // console.log(err);
+        return res.status(500).send(err.message)
     }
 })
 

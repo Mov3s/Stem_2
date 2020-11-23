@@ -72,8 +72,10 @@ app.use('/api/reviews', require('./routes/api/reviews'))
 
 app.use('/api/extra', require('./routes/api/extras'))
 
+app.use('/api/newsletter', require('./routes/api/newsletter'))
+
 //testing bespoke integration
-app.use('/api/createsession', require('./routes/stripe/createSession'))
+// app.use('/api/createsession', require('./routes/stripe/createSession'))
 
 app.use('/api/create-payment-intent', require('./routes/stripe/createPaymentIntent'))
 app.use('/api/confirm-payment-intent', require('./routes/stripe/confirmPaymentIntent'))
@@ -96,15 +98,15 @@ app.get('/test', async (req, res) => {
 
 app.use(require('./middleware/error-handler'))
 
-// Serve static assets in production
-if (process.env.NODE_ENV === 'production') {
-  // Set static folder
-  app.use(express.static('client/build'));
+// // Serve static assets in production
+// if (process.env.NODE_ENV === 'production') {
+//   // Set static folder
+//   app.use(express.static('client/build'));
 
-  app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'));
-  });
-}
+//   app.get('*', (req, res) => {
+//     res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'));
+//   });
+// }
 
 const PORT = process.env.PORT || 5000;
 

@@ -38,6 +38,10 @@ const ProductSchema = new mongoose.Schema({
         type: String, 
         // required: true
     },
+    featured: {
+        type: Boolean,
+        default: false
+    },
     sales: {
         type: Number,  //count sales based on individual unit sold??
         Default: 0
