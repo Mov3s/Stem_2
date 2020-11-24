@@ -9,9 +9,7 @@ const { check, validationResult } = require('express-validator');
 // @desc     add emails for newsletter
 // @access   Public
 router.post('/',   
-    [
-        check('email', 'Please include a valid email').isEmail()
-    ], async (req, res, next) => {
+    async (req, res, next) => {
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -21,13 +19,15 @@ router.post('/',
     try{
         const { email } = req.body
 
+        console.log('email')
+
         const toSave = EmailsForNewsletter({
             email: email
         })
 
         await toSave.save()
 
-        return res.status(200).json({success: true})
+        return res.status(200).json(toSave)
 
     }catch(e){
         // console.log(e)
@@ -35,4 +35,18 @@ router.post('/',
     }
 })
 
-module.exports =  router
+// @route    GET api/newsletter
+// @desc     Get all emails for newsletter
+// @access   Public
+router.get('/', async (req, res, next) => {
+    try {
+  
+      const newsletter = await EmailsForNewsletter.find({}, {__v: 0, date: 0, password: 0})
+      res.status(200).json(newsletter);
+    } catch (err) {
+      console.log(err);
+      res.status(500).send({ message: e.message });
+    }
+  });
+  
+module.exports = router

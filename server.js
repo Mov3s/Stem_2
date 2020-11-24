@@ -48,6 +48,7 @@ app.use(morgan('common'))
 
 // app.use('/api/', limiter)
 
+app.use(require('./middleware/error-handler'))
 
 // Define Routes
 app.use('/api/users', require('./routes/api/users'));
@@ -96,7 +97,6 @@ app.get('/test', async (req, res) => {
   }
 })
 
-app.use(require('./middleware/error-handler'))
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
