@@ -23,11 +23,11 @@ const app = express();
 connectDB();
 
 // Init Middleware
+app.use(cors());
 app.use(helmet())
 app.use(express.json({extended: false}))
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors());
 
 //For Request logging
 app.use(morgan('common'))
