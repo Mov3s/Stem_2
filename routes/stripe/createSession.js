@@ -97,7 +97,7 @@ async (req, res) => {
 //@access public
 router.post('/guest',
 [
-  check('items', 'price is required')
+  check('items', 'items are required')
   .not()
   .isEmpty(),
   check('email', 'email is required')

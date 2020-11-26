@@ -6,10 +6,9 @@ const mongoose = require('mongoose')
 const User = require('../models/User')
 const RefreshToken = require('../models/RefreshToken')
 
-const secret = config.get('jwtSecret')
+require('dotenv').config()
+const secret = process.env.JWTSECRET
 const { getNextSequence } = require('../utils/myUtils')
-
-
 
 
 const authenticate = async ({ username, password, ipAddress }) => {
@@ -22,7 +21,7 @@ const authenticate = async ({ username, password, ipAddress }) => {
         throw 'Username or password is incorrect';
     }
 
-    // authentication successful so generate jwt and refresh tokens
+    // authentication successful, generate jwt and refresh tokens
     const jwtToken = generateJwtToken(user);
     const refreshToken = generateRefreshToken(user, ipAddress);
 

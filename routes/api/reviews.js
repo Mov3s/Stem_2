@@ -6,7 +6,6 @@ const auth = require('../../middleware/auth');
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const config = require('config');
 const { check, validationResult } = require('express-validator');
 
 const { getNextSequence } = require('../../utils/myUtils')
@@ -60,7 +59,7 @@ router.post(
             comment: comment ? comment : '',
             rating: rating,
             product_id: product.idx,
-            customer_id: customerId ? customerId : 9999999,//exclude this field when  customer_id = 9999999 
+            customer_id: customerId ? customerId : 0,//exclude this field when  customer_id = 9999999 
         })
 
         await newReview.save();
@@ -136,9 +135,10 @@ router.get(
 
             if (Object.keys(filter).length > 0 && filter.product_id){
                 reviews = await Reviews.find({ product_id: filter.product_id }, {__v: 0, _id: 0})
+
                 if (!reviews) return res.status(404).json("Reviews not Found")
                 // console.log("[REVIEWS - QUERY(product_id)]", reviews)
-                Reviews.setContentLimit(res, header, range, count)
+                Reviews.setContentLimit(res, header, range, reviews.length)
                 return res.status(206).json(reviews)
             }
           }

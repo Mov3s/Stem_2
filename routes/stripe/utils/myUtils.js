@@ -16,7 +16,7 @@ const calculateOrderAmount = async (items) => {
     }))
   
     //reduce returns the sum of array
-    console.log('[EACH ITEM PRICE]', itemprice.reduce((a, b) => a + b , 0))
+    // console.log('[EACH ITEM PRICE]', itemprice.reduce((a, b) => a + b , 0))
 
     return itemprice.reduce((a, b) => a + b , 0);
 };

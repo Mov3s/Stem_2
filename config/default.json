@@ -1,8 +1,0 @@
-{
-    "mongoURI": "mongodb+srv://admin:2B2721admin@inphinityx.plxbq.mongodb.net/Stem?retryWrites=true&w=majority",
-    "jwtSecret": "secret",
-    "githubClientId": "",
-    "githubSecret": ""
-}
-
-

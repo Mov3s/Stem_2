@@ -3,7 +3,6 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const auth = require('../../middleware/auth');
 const jwt = require('jsonwebtoken')
-const config = require('config');
 const { check, validationResult } = require('express-validator');
 
 const User = require('../../models/User');
@@ -11,7 +10,6 @@ const RefreshToken = require('../../models/RefreshToken');
 const UserService = require('../../middleware/user-service');
 const { setTokenCookie, setJWTHeader } = require('../../utils/myUtils')
 
-const secret = config.get('jwtSecret')
 
 // @route    GET api/auth
 // @desc     Test route (Get current user without password)

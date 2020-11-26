@@ -10,6 +10,7 @@ const ReviewsShema = new mongoose.Schema({
   comment: {
     type: String,
   },
+  //customer's with 0 is guess
   customer_id:{
     type: Number,
     ref: 'customer'
@@ -35,7 +36,9 @@ const ReviewsShema = new mongoose.Schema({
 
 ReviewsShema.statics.setContentLimit = (res, header, range, count) => {
 
+  
   // const rangeArray = range.replace('[', '').replace(']', '').split(',')
+  console.log(range)
       var rangeFirst = range[0] ? parseInt(range[0]) : 0
       var rangeLimit = range[1] ? parseInt(range[1]) : 9
 

@@ -7,9 +7,10 @@ const RefreshToken = require('../models/RefreshToken')
 
 const Logs =  require('../models/Logs')
 const level = require('../utils/LogLevel')
+require('dotenv').config()
 
 const auth = async (req, res, next) => {
-  const secret = config.get('jwtSecret')
+  const secret = process.env.JWTSECRET
 
   // Get token string from header
   var token = req.header('Authorization') ? req.header('Authorization').split(' ')[1] : req.header('x-auth-token');

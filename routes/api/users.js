@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const config = require('config');
 
 const mongoose = require('mongoose')
 
@@ -66,6 +65,8 @@ router.post(
 
       setTokenCookie(res, refreshToken)
 
+      console.log(user._id)
+
       const seq = await getNextSequence(mongoose.connection.db, 'customerId')
       console.log(seq)
       let customer = new Customer({
@@ -73,7 +74,7 @@ router.post(
         firstname: firstname, 
         lastname: lastname,
         email: user.email,
-        user_id: user.id,
+        user_id: user._id,
       })
       await customer.save()
 
@@ -119,7 +120,7 @@ router.post(
       //   }
       // );
     } catch (err) {
-      console.error(err);
+      // console.error(err);
       return res.status(404).json({ error: { message: err.message } });
     }
   }

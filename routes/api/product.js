@@ -8,7 +8,6 @@ const resizeImage = require('../../middleware/resizeImage')
 //Unused imports, remove later//
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const config = require('config');
 //******//
 
 const { Readable } = require('stream');
