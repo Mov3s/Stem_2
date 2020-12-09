@@ -8,11 +8,11 @@ const resizeImage = async (req, res, next ) => {
 
     // const images = req.files['images'] 
 
-    const images = req.files['previews'] ? req.files['previews'] : req.files['images']
+    const images = req.files['previews'] ? req.files['previews'] : null//req.files['images']
 
     req.body.images = []
 
-    if (images !== undefined){
+    if (images !== undefined && images!== null){
         await Promise.all(
             images.map(async (image) => {
                 // const newImageName = generateUniqueName(image.originalname)

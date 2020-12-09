@@ -8,7 +8,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
 
-const { getNextSequence } = require('../../utils/myUtils')
+const { getNextSequence, base64String } = require('../../utils/myUtils')
 
 const Reviews = require('../../models/Reviews');
 const Customer = require('../../models/Customer');
@@ -86,7 +86,7 @@ router.get(
 
       try {
 
-        var reviews, header
+        let reviews, header
 
         const filter = req.query.filter === undefined  || req.query.filter === '{}' ? {} : JSON.parse(req.query.filter)
         const range = req.query.range === undefined ? {} : JSON.parse(req.query.range)
@@ -97,14 +97,54 @@ router.get(
         const count = await Reviews.countDocuments({}).exec()
 
         if (Object.keys(req.query).length === 0) {
+          // reviews = await Reviews.find({ status: 'accepted'},{ __v: 0, _id: 0})     
+          const limit = 5
+          reviews = []
+          for (var i = 0; i < limit; i++){
+            
+            var random = Math.floor(Math.random() * count)
+            var review = await Reviews.findOne({status: 'accepted'}).skip(random)
 
-          reviews = await Reviews.find({},{date: 0, __v: 0, _id: 0})     
+            if (review){
+              reviews.push(review)
+            }
+          }
 
           if (!reviews) return res.status(404).json("Reviews not Found")
 
-          Reviews.setContentLimit(res, header, range, count)
-          return res.status(206).json(reviews)
+          const chunksCollection = mongoose.connection.db.collection("previews.chunks") 
+          const filesCollection = mongoose.connection.db.collection("previews.files")
 
+          let product 
+          let newReviews = []
+
+          for (let rev of reviews){
+            product = await Products.findOne({ idx: rev.product_id })
+
+            if (!product) continue;
+            
+            const imageName = product.previews.length > 0 ? product.previews[0] :  "No Image";
+
+            if (imageName !== "No Image"){  
+                const blobs = await filesCollection.find({ "filename": imageName }).toArray()
+                let ext, _imageBinaryJSON
+
+                const blobsJSON = JSON.parse(JSON.stringify(blobs));
+                ext = blobsJSON[0].filename.split('.')[1]
+
+                const imageBinary = await chunksCollection.find({ "files_id" : mongoose.Types.ObjectId(blobsJSON[0]._id) }).toArray()
+                _imageBinaryJSON = JSON.parse(JSON.stringify(imageBinary))
+
+                rev = JSON.parse(JSON.stringify(rev))
+                rev.base64 = base64String(_imageBinaryJSON[0].data, ext)
+
+                rev.productName = product.name
+                newReviews.push(rev)
+            }
+          }
+
+          Reviews.setContentLimit(res, header, range, count)
+          return res.status(206).json(newReviews)
 
         }else{
           if(range && sort){
@@ -161,7 +201,8 @@ router.get(
 
     try{
 
-      const review = await Reviews.findOne({"idx": req.params.idx},{_id: 0, date: 0, __v: 0})
+      const idx = parseInt(req.params.idx, 10)
+      const review = await Reviews.findOne({"idx": idx},{_id: 0, __v: 0})
   
       if (review === null || review === undefined || review.length === 0){
   
@@ -182,12 +223,10 @@ router.get(
 // @route    PUT api/reviews/:idx
 // @desc     Edit single Review
 // @access   private
-router.put('/:idx', 
+router.put('/', 
   // auth, 
   [
-  // check('comment', 'Please include a valid comment')
-  // .not()
-  // .isEmpty()
+
   ],
    async (req, res, next) => {
     const errors = validationResult(req);
@@ -196,9 +235,13 @@ router.put('/:idx',
     }
 
     try{
-      const { comment, rating, status } = req.body
 
-      const review = await Reviews.findOne({"idx" : req.params.idx }, {date: 0, __v: 0})
+      console.log(req.body)
+      const { comment, rating, status, id } = req.body
+
+      const review = await Reviews.findOne({idx : id }, {_id:0, __v: 0})
+
+      console.log(review)
 
       if (!review || review === null){
           return res.status(400).json("Review doesn't Exists")
@@ -209,8 +252,8 @@ router.put('/:idx',
       review.status = status ? status : review.status
 
       await review.save();
-
-      res.status(200).json(review)
+      
+      return res.status(200).json(review)
 
     }catch(err){
       // console.log(err)
@@ -218,6 +261,8 @@ router.put('/:idx',
     }
 
 })
+
+
 
 
 // @route    DELETE api/reviews/:idx

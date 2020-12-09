@@ -10,7 +10,8 @@ const { check, validationResult } = require('express-validator');
 // @access   Public
 router.post('/',   
     [
-        check('email').isEmail()
+        check('email', 'email is invalid')
+        .isEmail()
      ],
     async (req, res, next) => {
 
@@ -33,7 +34,6 @@ router.post('/',
         })
 
         await toSave.save()
-
         
         return res.status(200).json({
             success: true,

@@ -56,7 +56,7 @@ router.post(
 
     try {
 
-     const { email, password, password2, firstname, lastname } = req.body;
+     const { email, password, password2 } = req.body;
      const ipaddress = req.ip
     //  console.log(req.body)
 
@@ -71,8 +71,6 @@ router.post(
       console.log(seq)
       let customer = new Customer({
         idx: seq,
-        firstname: firstname, 
-        lastname: lastname,
         email: user.email,
         user_id: user._id,
       })

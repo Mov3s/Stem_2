@@ -40,11 +40,10 @@ const iterateJSON = (data) => {
 
 const getNextSequence = async (db, name) => {
 
-    const check = await db.collection("counters").find({ id: name }).toArray()
+    const check = await db.collection("counters").find({ _id: name }).toArray()
 
-    console.log("[LINE 45, CHECK]", check)
     //Create if it doesnt exist
-    if (!check){
+    if (!check || check.length === 0){
         const obj = {
             _id : name,
             seq: 1

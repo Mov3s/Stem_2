@@ -15,9 +15,9 @@ const authenticate = async ({ username, password, ipAddress }) => {
 
     const user = await User.findOne({ email: username });
 
-    // console.log("[USER FFROM AUTHENTICATE]",user)
+    const isMatch =  await bcrypt.compare(password, user.password)
 
-    if (!user || !bcrypt.compare(password, user.password)) {
+    if (!user || !isMatch) {
         throw 'Username or password is incorrect';
     }
 
@@ -37,6 +37,8 @@ const authenticate = async ({ username, password, ipAddress }) => {
         refreshToken: refreshToken.token
     };
 }
+
+
 
 const registerUser = async ({email, password, password2, ipAddress }) => {
 
@@ -58,9 +60,9 @@ const registerUser = async ({email, password, password2, ipAddress }) => {
         // isAdmin : isAdmin ? isAdmin : false
     });
 
-    const salt = await bcrypt.genSalt(10);
+    // const salt = await bcrypt.genSalt(10);
 
-    user.password = await bcrypt.hash(password, salt);
+    user.password = await bcrypt.hash(user.password, 10);
 
     await user.save();
 

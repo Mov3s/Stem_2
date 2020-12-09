@@ -30,7 +30,8 @@ const connectDB = async () => {
         { _id: "productId", seq : 1},
         { _id: "userId", seq : 1},
         { _id: "categoryId", seq : 1},
-        { _id: "extraId", seq : 1}
+        { _id: "extraId", seq : 1},
+        { _id: "sectionId", seq : 1}
       ]
       
       await Counters.insertMany(entries)

@@ -4,7 +4,7 @@ const { setHeaderForPartial } = require('../utils/myUtils')
 
 const ReviewsShema = new mongoose.Schema({
   idx: {
-    type: String,
+    type: Number,
     unique: true
   },
   comment: {
@@ -24,8 +24,9 @@ const ReviewsShema = new mongoose.Schema({
   },
   status: {
     type: String,
-    default: 'Pending'
-    //Accepted, Rejected, Pending
+    default: 'pending',
+    enum: ['accepted', 'rejected', 'pending']
+    //accepted, rejected, pending
   },
   date: {
     type: Date,

@@ -53,11 +53,15 @@ router.post(
           user,
           jwtToken
         })
-      }).catch(next)
+      }).catch((error) => {
+        return res.status(400).json({
+          error
+       });
+      })
 
     } catch (err) {
-      // console.error(err.message);
-      res.status(500).send({  message: err.message });
+      console.error(err);
+      return res.status(500).send({  message: err.message });
     }
   }
 );

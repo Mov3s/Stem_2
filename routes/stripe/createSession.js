@@ -62,15 +62,16 @@ async (req, res) => {
           payment_method_types: ['card'],
           line_items: lineitems,
           mode: 'payment',
+          allow_promotion_codes: true,
           success_url: `${MYDOMAIN}/checkout?success=true`,
           cancel_url: `${MYDOMAIN}/checkout?canceled=true`,
           metadata: { 
             externalIdx: mCustomer[0].idx 
           },
           billing_address_collection: 'auto',
-          shipping: {
-
-          }
+          shipping_address_collection: {
+            allowed_countries: ['IE', 'GB'],
+          },
         });
 
         console.log(stripeCustomer.data[0].metadata.sessions)
@@ -131,9 +132,10 @@ async (req, res) => {
             cancel_url: `${MYDOMAIN}/checkout?canceled=true`,
             customer_email : email.toString(),
             billing_address_collection: 'auto',
-            shipping: {
-
-            }
+            allow_promotion_codes: true,
+            shipping_address_collection: {
+              allowed_countries: ['IE', 'GB'],
+            },
           });
 
           return res.status(200).json({ id: session.id });
@@ -146,16 +148,16 @@ async (req, res) => {
             cancel_url: `${MYDOMAIN}/checkout?canceled=true`,
             customer : customers.data[0].id,
             billing_address_collection: 'auto',
-            shipping: {
-
-            }
+            allow_promotion_codes: true,
+            shipping_address_collection: {
+              allowed_countries: ['IE', 'GB'],
+            },
           });
           return res.status(200).json({ id: session.id });
         }
     }catch(e){
         console.log(e)
     }
-  
   });
 
 module.exports = router
