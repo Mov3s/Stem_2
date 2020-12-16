@@ -21,7 +21,7 @@ const Products = require('../../models/Product');
 router.post(
   '/',
   [
-    auth, 
+    // auth, 
     [
     check('rating', 'Please include a rating for product')
     .not()
@@ -37,10 +37,10 @@ router.post(
 
     try {
         
-        const { comment, rating, id  } = req.body
+        const { comment, rating, id, user } = req.body
 
         let customerId
-        const userId = req.user.id
+        const userId = user
         // console.log(userId)
 
         if (userId){
@@ -59,7 +59,7 @@ router.post(
             comment: comment ? comment : '',
             rating: rating,
             product_id: product.idx,
-            customer_id: customerId ? customerId : 0,//exclude this field when  customer_id = 9999999 
+            customer_id: customerId ? customerId : 9999999,//exclude this field when  customer_id = 9999999 
         })
 
         await newReview.save();
@@ -70,7 +70,7 @@ router.post(
 
     }catch(err) {
       // console.log(err)
-      return res.status(500).json(err.message)
+      return res.status(500).json({ success: false, message: err.message})
     }
   }
 );

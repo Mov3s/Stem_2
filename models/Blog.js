@@ -128,8 +128,17 @@ BlogSchema.statics.findChunksForBlog =  async (blogs) =>{
             const chunks = await imageChunksCollecttion.find({ "files_id": mongoose.Types.ObjectId(blobs[0]._id) }).toArray()
 
             var chunksJSON = JSON.parse(JSON.stringify(chunks))
+
+            let chunksData = ''
+            if (chunksJSON.length > 1){
+                chunksJSON.forEach(chun => {
+                    chunksData += chun.data
+                });
+            }else{
+                chunksData = chunksJSON[0].data
+            }
           
-            eachBlogImage = base64String(chunksJSON[0].data, ext)     
+            eachBlogImage = base64String(chunksData, ext)     
           }  
       }
 

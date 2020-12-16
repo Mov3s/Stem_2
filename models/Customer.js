@@ -23,6 +23,12 @@ const CustomerSchema = new mongoose.Schema({
   birthday: {
       type: Date
   },
+  country: {
+    type: String
+  },  
+  city: {
+    type: String
+  },
   email: {
     type: String
   },
@@ -50,7 +56,7 @@ const CustomerSchema = new mongoose.Schema({
       default: 0
       //update on last purchase
   },
-  eircode:{
+  eirCode:{
       type: String
   },
   groups: {

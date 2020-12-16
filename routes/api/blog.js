@@ -21,7 +21,6 @@ const Section = require('../../models/Section');
 const { getNextSequence, base64String, base64StringVideo, generateUniqueName, logError, isEmpty } = require('../../utils/myUtils')
 
 const multer = require('multer');
-const { isNull } = require('util');
 // const { isEmpty } = require('lodash');
 const memStorage = multer.memoryStorage()
 //fieldSize = 8mb
@@ -60,7 +59,7 @@ router.get('/', async (req, res, next) => {
 
         if (Object.keys(req.query).length === 0) {
 
-          blogs = await Blog.find({},{__v: 0, _id: 0, date:0})     
+          blogs = await Blog.find({},{__v: 0, _id: 0 })     
 
           if (!blogs) return res.status(404).json("Blogs not Found")
 
@@ -150,7 +149,7 @@ router.get('/', async (req, res, next) => {
 router.get('/:id', async (req, res) => {
     try{
 
-        var blog = await Blog.findOne({"idx": req.params.id}, {date:0, __v: 0, _id: 0});
+        var blog = await Blog.findOne({"idx": req.params.id}, {__v: 0, _id: 0});
 
         if (!blog){
             return res.status(404).json("Blog Not found")
@@ -165,13 +164,13 @@ router.get('/:id', async (req, res) => {
         if(sectionIds){
             for (let sectionId of sectionIds){
 
-                const section = await Section.find({ idx: sectionId}, {_date: 0, __v:0})
+                const section = await Section.findOne({ idx: sectionId}, {_date: 0, __v:0})
 
-                if (!section || section.length === 0){
+                if (!section){
                     //no section exist
                     continue;
                 }
-                const sectionFile = await sectionsFilesCollecttion.find({ filename: section[0].image }).toArray();
+                const sectionFile = await sectionsFilesCollecttion.find({ filename: section.image }).toArray();
 
                 if(!sectionFile || sectionFile.length === 0){
                     //no image exist for section
@@ -185,7 +184,7 @@ router.get('/:id', async (req, res) => {
                 var chunksJSON = JSON.parse(JSON.stringify(sectionChunk))
 
                 let temp = {
-                    text: section[0].text,
+                    text: section.text,
                     image: base64String(chunksJSON[0].data, secExt)
                 }
                 sectionDictionary.push(temp)
@@ -198,7 +197,7 @@ router.get('/:id', async (req, res) => {
         const imageChunksCollecttion =  mongoose.connection.db.collection("BlogImages.chunks")
         const imageFilesCollecttion =  mongoose.connection.db.collection("BlogImages.files")
 
-        var base64Images = []
+        let base64Images
 
         if(imageName){
 
@@ -217,12 +216,23 @@ router.get('/:id', async (req, res) => {
 
             var chunksJSON = JSON.parse(JSON.stringify(chunks))
 
-            base64Images.push(base64String(chunksJSON[0].data, ext))
+            // var b64 =  Buffer.from(chunksJSON[0].data, 'base64')
+
+            let chunksData = ''
+            if (chunksJSON.length > 1){
+                chunksJSON.forEach(chun => {
+                    chunksData += chun.data
+                });
+            }else{
+                chunksData = chunksJSON[0].data
+            }
+
+            base64Images = base64String(chunksData, ext)
         }
 
         blog = JSON.parse(JSON.stringify(blog))
         blog.images_chunk = base64Images
-        blog.sections = sectionDictionaro
+        blog.sections = sectionDictionary
 
         console.log(Object.keys(blog))
         return res.status(200).json(blog)
@@ -255,7 +265,7 @@ router.get('/:id', async (req, res) => {
 // @access   Private
 router.post('/', 
     [
-        auth, 
+        // auth, 
         upload,
         // resizeImage,
         [
@@ -279,13 +289,6 @@ router.post('/',
 
         console.log(req.body)
 
-        var teaser
-        if (text.charAt(80)){
-            teaser = text.substr(0, 80)
-        }else{
-            teaser = text
-        }
-
         const sectionBucket = new mongodb.GridFSBucket(mongoose.connection.db, {
             bucketName: 'sectionImages'
         })
@@ -294,7 +297,7 @@ router.post('/',
         let sectionIds = []
 
         //starting loop from index 1 to ignore titleImage
-        for (var i = 1; i < Object.keys(req.files).length-1 ; i++){
+        for (var i = 1; i <= Object.keys(req.files).length-1 ; i++){
             const section = req.files[`section${i}Img`] ? req.files[`section${i}Img`] : null
             const sectionText = req.body[`section${i}`] ? req.body[`section${i}`] : null
 
@@ -310,16 +313,17 @@ router.post('/',
                         idx: secID,
                         // blog: ,
                         text: sectionText,
-                        image: newSecImg
+                        image: newSecImg,
+                        order: i,
                     })
                     await sec.save()
-                }else
-                if(section && !sectionText){
+                }else if(section && !sectionText){
                     const newSecImg = Section.saveBlogImages(res, sectionBucket, section)
                     const sec = Section({
                         idx: secID,
                         // blog: ,
-                        image: newSecImg
+                        image: newSecImg,
+                        order: i,
                     })
                     await sec.save()
                 }else if(!section && sectionText){
@@ -327,6 +331,7 @@ router.post('/',
                         idx: secID,
                         // blog: ,
                         text: sectionText,
+                        order: i,
                     })
                     await sec.save()
                 }
@@ -339,7 +344,7 @@ router.post('/',
             bucketName: 'BlogImages'
         })
 
-        const blogImageNames = Section.saveBlogImages(res, bucket, image)     
+        const blogImageName = Section.saveBlogImages(res, bucket, image)     
 
         const seq = await getNextSequence(mongoose.connection.db, 'blogId')
 
@@ -348,8 +353,7 @@ router.post('/',
             // user: req.user.id,
             text: text,
             title: title,
-            teaser: teaser,
-            image: blogImageNames,
+            image: blogImageName,
             sections: sectionIds
         })
 
@@ -469,7 +473,7 @@ router.delete('/:id',
 // @desc Delete multiple blogs by Id 
 // @access Private
 router.delete('/', 
-    auth,
+    // auth,
     async (req, res) => {
     
     try{
@@ -564,83 +568,153 @@ router.put('/',
         }
         try {
     
-            const { idx, text, title, images } = req.body   //Add Teaser
-            const videos = req.files['videos']
-            var teaser 
+            const { idx, text, title } = req.body   //Add Teaser
+            // const videos = req.files['videos']
 
-            if (text.charAt(80)){
-                teaser = text.slice(0, 80)
-            }else{
-                teaser = text
-            }
-    
-            const blog = await Blog.findOne({"idx":idx})
+            const image = req.files['titleImage'] ? req.files['titleImage'] : null           
+
+            const blog = await Blog.findOne({ "idx": idx })
 
             if (!blog){
                 return res.status(404).json("Blog Not Found")
             }
 
-            const videoNames = videos ? videos.map(video => generateUniqueName(video.originalname)) : []
-            const imageNames = images ? images.map(image => generateUniqueName(image.originalname)) : []
+            // const videoNames = videos ? videos.map(video => generateUniqueName(video.originalname)) : []
     
-            //add video to bucket
-            const videoBucket = new mongodb.GridFSBucket(mongoose.connection.db, {
-                bucketName: 'BlogVideos'
+            //section bucket
+            const sectionBucket = new mongodb.GridFSBucket(mongoose.connection.db, {
+                bucketName: 'sectionImages'
             })
 
-            console.log(req.body)
-            console.log(videos)
-    
-            if (videoNames.length > 0){
-                videos.forEach(video => {
-    
-                    const readableVideoStream = new Readable()
-                    readableVideoStream.push(video.buffer);
-                    readableVideoStream.push(null);
-                    readableVideoStream.pipe(videoBucket.openUploadStream(generateUniqueName(video.originalname)))
-                    .on('error', (error) => {
-                        Logs.addLog(level.level.error, error.message, error)
-                        return res.status(500).send(error.message)
-                    })
-                    .on('finish', () => {
-                        Logs.addLog(level.level.info, 'Upload Success - {}', '')
-                        //next()
-                    })
-                })
+            //add video to bucket
+            for (var i = 1; i <= Object.keys(req.files).length-1 ; i++){
+                const newSection = req.files[`section${i}Img`] ? req.files[`section${i}Img`] : null
+                const newSectionText = req.body[`section${i}`] ? req.body[`section${i}`] : null
+
+                const oldSection = await Section.findOne({ order: i, blog: blog.idx})
+                if (!oldSection){
+                    if (newSection){
+                        const newSectionImgName = Section.saveBlogImages(res, sectionBucket, newSection)
+                        const sec = new Section({
+                            text: newSectionText ? newSectionText : '',
+                            image: newSectionImgName,
+                            order: i
+                        })
+                        await sec.save()
+                    }
+                }
+
+                if(oldSection){
+                    if (newSection && newSectionText){
+                        mongoose.connection.db.collection('sectionImages.files', (err, sectionCollection) => {
+                            if (!err){
+                                sectionCollection.find({ filename: oldSection.image }).toArray((err, data) => {
+                                    if (!err){
+                                        data.forEach(dat => {
+                                            sectionBucket.delete(dat._id, (err) => {
+                                                if(!err){
+                                                    console.log(`section ${oldSection.idx} Image deleted`)
+                                                    Logs.addLog(level.level.info, `Section : { id: ${oldSection.idx} } for Blog: { id : ${blog.idx} } Deleted successful`, '')
+                                                }
+                                            })
+                                        })
+                                    }
+                                })
+                            }
+                        })
+                        const newSectionImgName = Section.saveBlogImages(res, sectionBucket, newSection)
+                        oldSection.text = newSectionText ? newSectionText : oldSection.text
+                        oldSection.image = newSectionImgName ? newSectionImgName : oldSection.image
+                        await oldSection.save()
+                    }
+
+                    if (newSection && !newSectionText){
+                        mongoose.connection.db.collection('sectionImages.files', (err, sectionCollection) => {
+                            if (!err){
+                                sectionCollection.find({ filename: oldSection.image }).toArray((err, data) => {
+                                    if (!err){
+                                        data.forEach(dat => {
+                                            sectionBucket.delete(dat._id, (err) => {
+                                                if(!err){
+                                                    console.log(`section ${oldSection.idx} IMG deleted`)
+                                                    Logs.addLog(level.level.info, `Section : { id: ${oldSection.idx} } for Blog: { id : ${blog.idx} } Deleted successful`, '')
+                                                }
+                                            })
+                                        })
+                                    }
+                                })
+                            }
+                        })
+                        const newSectionImgName = Section.saveBlogImages(res, sectionBucket, newSection)
+                        oldSection.text = newSectionText ? newSectionText : oldSection.text
+                        oldSection.image = newSectionImgName ? newSectionImgName : oldSection.image
+                        await oldSection.save()
+                    }
+
+                    if (!newSection && newSectionText){
+                        oldSection.text = newSectionText ? newSectionText : oldSection.text
+                        oldSection.image = newSectionImgName ? newSectionImgName : oldSection.image
+                        await oldSection.save()
+                    }
+                } 
             }
-    
+
             //add photo to bucket
             const bucket = new mongodb.GridFSBucket(mongoose.connection.db, {
                 bucketName: 'BlogImages'
             })
     
-            if(imageNames.length > 0){
-                images.forEach(image => {
-                    const readablePhotoStream = new Readable();
-                    readablePhotoStream.push(image.buffer);
-                    readablePhotoStream.push(null);
+            if (image){
+                mongoose.connection.db.collection('BlogImages.files', (err, fileCollection) => {
+                    logError(err)
     
-                    readablePhotoStream.pipe(bucket.openUploadStream(generateUniqueName(image.originalname)))
-                    .on('error', (error) => {
-                        Logs.addLog(level.level.error, error.message, error)
-                        return res.status(500).send(error.message + '<<<<<' )
-                    })
-                    .on('finish', () => {
-                        Logs.addLog(level.level.info, 'Upload Success - {}', '')
-                        //next()
+                    fileCollection.find({ filename: blog.image }).toArray((err, data) => {
+                        
+                        logError(err)
+
+                        data.forEach(data => {
+                            bucket.delete(data._id, (err) => {
+                                logError(err)
+                                Logs.addLog(level.level.info, ` Blog: { id : ${blog.idx} } Image Deleted successful`, '')
+                            })
+                        })
                     })
                 })
+                const newBlogImgName = Section.saveBlogImages(res, bucket, image)
+                blog.image = newBlogImgName ? newBlogImgName : blog.image
             }
-
+           
             blog.text = text ? text : blog.text
             blog.title = title ? title : blog.title
-            blog.teaser = teaser ? teaser : blog.teaser
-            blog.images = imageNames.length > 0 ? imageNames : blog.images
-            blog.videos = videoNames.length > 0 ? videoNames : blog.videos
 
             await blog.save()
     
             return res.status(200).json(blog)
+
+             // const videoBucket = new mongodb.GridFSBucket(mongoose.connection.db, {
+            //     bucketName: 'BlogVideos'
+            // })
+
+            // console.log(req.body)
+            // console.log(videos)
+    
+            // if (videoNames.length > 0){
+            //     videos.forEach(video => {
+    
+            //         const readableVideoStream = new Readable()
+            //         readableVideoStream.push(video.buffer);
+            //         readableVideoStream.push(null);
+            //         readableVideoStream.pipe(videoBucket.openUploadStream(generateUniqueName(video.originalname)))
+            //         .on('error', (error) => {
+            //             Logs.addLog(level.level.error, error.message, error)
+            //             return res.status(500).send(error.message)
+            //         })
+            //         .on('finish', () => {
+            //             Logs.addLog(level.level.info, 'Upload Success - {}', '')
+            //             //next()
+            //         })
+            //     })
+            // }
           
         } catch (error) {
             Logs.addLog(level.level.error, error.message, error)

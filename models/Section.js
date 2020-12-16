@@ -19,12 +19,16 @@ const SectionSchema = new mongoose.Schema({
     image: {
         type: String,
     },
+    order:{
+        type: Number
+    }
 })
 
 
 
 SectionSchema.statics.saveBlogImages = (res, bucket, files) => {
     if(files.length > 0){
+        
         const newName = generateUniqueName(files[0].originalname)
         const readable = new Readable()
         readable.push(files[0].buffer);

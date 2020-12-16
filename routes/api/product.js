@@ -20,6 +20,7 @@ const {getNextSequence, base64String, generateUniqueName, logError } = require('
 
 const Product = require('../../models/Product');
 const Category = require('../../models/Category');
+const Reviews = require('../../models/Reviews');
 const Logs = require('../../models/Logs')
 const level = require('../../utils/LogLevel')
 
@@ -276,11 +277,29 @@ router.get('/:idx', async (req, res, next) => {
             base64Images.push(base64String(chunksJSON[0].data, ext))
         }
 
+        const reviews = await Reviews.find({ product_id: product.idx})
+
+        const reviewsCount = reviews.length
+
+        const filteredReviews = reviews.filter((review) => 
+            review.status === 'accepted' 
+        )
+
+        let reviewTotal = 0
+        filteredReviews.map((review) => {
+            reviewTotal += review.rating 
+        })
+
+        const reviewAverage = reviewTotal/filteredReviews.length
+
         product = JSON.parse(JSON.stringify(product))
 
         product.base64Images = base64Images
 
-        res.status(200).json({           
+        product.reviewCount = reviewsCount
+        product.reviewAverage = parseFloat(reviewAverage.toFixed(1))
+
+        return res.status(200).json({           
            product
         })
 

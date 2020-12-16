@@ -67,16 +67,14 @@ router.get('/', auth, async (req, res, next) => {
         customers = await Customer.find().where("idx").in(filter.id)
         if (!customers) return res.status(404).json("Customer not Found")
         // console.log("[CUSTOMER - QUERY]", customers)
-        res.status(206).json(customers)
-
+        return res.status(206).json(customers)
       }
-  }
+    }
 
     }catch(e){
         console.log(e)
         res.status(500).json({"Error": e.message})
     }
-
 })
 
 
@@ -98,7 +96,35 @@ router.get('/:idx', auth, async (req, res, next) => {
         console.log(e)
         res.status(500).json({"Error":e.message})
     }
+})
 
+
+// @route    GET api/customers/my/address
+// @desc     Get customer address for checkout  
+// @access   Private - for registered users..
+router.get('/my/address', auth, async (req, res, next) => {
+
+    try{
+
+       const customer = await Customer.findOne({"user_id": req.user.id}, { __v: 0, _id: 0})
+
+       if (!customer || customer.length === 0) return res.status(404).json("Customer not found")
+
+       const details = {
+           address : customer.address ? customer.address : null,
+           city : customer.city ? customer.city: null,
+           eirCode : customer.eirCode ? customer.eirCode : null,
+           country : customer.country ? customer.country : null,
+           firstname : customer.firstname ? customer.firstname : null,
+           lastname: customer.lastname ? customer.lastname : null
+       }
+
+       return res.status(200).json({ success: true, data: details })
+
+    }catch(e){
+       console.log(e)
+       return res.status(500).json({ success: false, error : e.message })
+    }
 })
 
 
@@ -140,7 +166,7 @@ router.post('/',
 
         const seq = await getNextSequence(mongoose.connection.db, 'customerId')
 
-        const { firstname, lastname, address, birthday, eircode, groups, city, user_id, email } = req.body
+        const { firstname, lastname, address, birthday, eirCode, groups, city, user_id, email, country } = req.body
         
         if(user.isAdmin === true){
             console.log("Admin Creating User")
@@ -160,24 +186,25 @@ router.post('/',
             firstname: firstname,
             address: address,
             birthday: birthday,
-            eircode: eircode,
+            country: country,
+            eirCode: eirCode,
             groups: groups,
             city: city,
         })
 
         const newCustomer = await customer.save()
 
-        res.status(200).json(newCustomer)
+        return res.status(200).json(newCustomer)
     
     }catch(e){
-        res.status(500).json({"Error":"Something Went wrong"})
+        return res.status(500).json({"Error":"Something Went wrong"})
     }
 
 })
 
 
 //ADMIN
-//@route     Update - PUT api/customer
+//@route     Update - PUT api/customers
 // @desc     Creat customer
 // @access   Private - for customers
 router.put('/', 
@@ -196,9 +223,16 @@ router.put('/',
 
     try{
 
-        const { idx, firstname, lastname, address, email, birthday, eircode, groups, city, newsletter, ordered} = req.body
+        const { idx, firstname, lastname, address, email, birthday, eirCode, groups, city, newsletter, ordered, country } = req.body
 
-        const customer = await Customer.findOne({"idx": idx}, {__v: 0})
+        const userId = req.user.id
+
+        let customer
+        if (idx){
+            customer = await Customer.findOne({"idx": idx}, {__v: 0})
+        }else{
+            customer =  await Customer.findOne({"user_id": userId}, {__v: 0})
+        }
 
         if (!customer) return res.status(404).json("Customer doesnt exist")
 
@@ -206,7 +240,8 @@ router.put('/',
         customer.firstname = firstname ? firstname : customer.firstname;
         customer.address = address ? address : customer.address;
         customer.birthday = birthday ? birthday : customer.birthday;
-        customer.eircode = eircode ? eircode : customer.eircode;
+        customer.country = country ? country : customer.country;
+        customer.eirCode = eirCode ? eirCode : customer.eirCode;
         customer.groups = groups ? groups : customer.groups;
         customer.city = city ? city : customer.city;
         customer.email = email ? email : customer.email;
@@ -214,11 +249,11 @@ router.put('/',
         customer.has_ordered = ordered ? ordered : customer.has_ordered;
         await customer.save()
 
-        res.status(200).json(customer)
+        return res.status(200).json(customer)
     
     }catch(e){
         console.log(e)
-        res.status(500).json({"Error":e.message})
+        return res.status(500).json({"Error":e.message})
     }
 })
 
