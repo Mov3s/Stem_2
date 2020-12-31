@@ -16,10 +16,10 @@ const MYDOMAIN = 'http://localhost:3000';
 
 
 //@route /api/create-session
-//@desc custom pre-built checkout for stripe
+//@desc custom pre-built checkout for stripen
 //@access public
 router.post('/', 
-auth,
+  auth,
   [
     check('items', 'price is required')
     .not()
@@ -28,12 +28,13 @@ auth,
 async (req, res) => {
 
     const errors = validationResult(req);
+
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
     try{
-        const { items } = req.body
+        const { items, shippingAddress } = req.body
 
         // console.log(req.user.ownsToken())
         const mCustomer = await Customer.find({ user_id: req.user.id})
@@ -74,7 +75,7 @@ async (req, res) => {
           },
         });
 
-        console.log(stripeCustomer.data[0].metadata.sessions)
+        console.log(stripeCustomer.data[0].metadata.lastSession)
         const customermeta = stripeCustomer.data[0].metadata
 
         await stripe.customers.update(
@@ -85,11 +86,14 @@ async (req, res) => {
           }
         })
 
-        res.status(200).json({ id: session.id });
+        return res.status(200).json({ "success": true, id: session.id });
     }catch(e){
         console.log(e)
+        return res.status(500).json({ 
+          "success": false,
+          "message": e.message
+        })
     }
-  
   });
 
 
@@ -137,8 +141,8 @@ async (req, res) => {
               allowed_countries: ['IE', 'GB'],
             },
           });
+          return res.status(200).json({ "success": true, id: session.id });
 
-          return res.status(200).json({ id: session.id });
         }else{
           const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
@@ -153,10 +157,14 @@ async (req, res) => {
               allowed_countries: ['IE', 'GB'],
             },
           });
-          return res.status(200).json({ id: session.id });
+          return res.status(200).json({"success": true, id: session.id });
         }
     }catch(e){
         console.log(e)
+        return res.status(500).json({ 
+          "success": false,
+          "message": e.message
+        })
     }
   });
 

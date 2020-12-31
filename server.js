@@ -75,6 +75,8 @@ app.use('/api/extra', require('./routes/api/extras'))
 
 app.use('/api/newsletter', require('./routes/api/newsletter'))
 
+app.use('/api/resetpassword', require('./routes/api/resetpassword'))
+
 //testing bespoke integration
 // app.use('/api/createsession', require('./routes/stripe/createSession'))
 

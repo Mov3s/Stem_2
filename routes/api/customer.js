@@ -249,11 +249,16 @@ router.put('/',
         customer.has_ordered = ordered ? ordered : customer.has_ordered;
         await customer.save()
 
-        return res.status(200).json(customer)
+        return res.status(200).json({
+            success: true,
+        })
     
     }catch(e){
         console.log(e)
-        return res.status(500).json({"Error":e.message})
+        return res.status(500).json({ 
+            success: false,
+            error: e.message
+        })
     }
 })
 

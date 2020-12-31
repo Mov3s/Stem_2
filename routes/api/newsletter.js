@@ -3,6 +3,7 @@ const router = express.Router();
 
 const EmailsForNewsletter = require('../../models/EmailsForNewsletter')
 const { check, validationResult } = require('express-validator');
+const { getTransporter } = require('../../utils/transporter')
 
 
 // @route    POST api/newsletter
@@ -24,7 +25,6 @@ router.post('/',
         const { email } = req.body
 
         // console.log(req.body)
-
         const _emailForNews = await EmailsForNewsletter.findOne({ email: email})
 
         if (_emailForNews) return res.status(400).json({ subscribed: true })
@@ -34,6 +34,31 @@ router.post('/',
         })
 
         await toSave.save()
+
+        const transporter = getTransporter()
+
+        let message = {
+            from: 'InphinityX <housesubletting@gmail.com>',
+            to: email,
+        
+            // Subject of the message
+            subject: 'Newsletter ✔ #', 
+
+            html: "<p>Signed up for newsletter successfully</p>" +
+                "<p>Thanks</p>"+
+                "<p>The InphinityX Team</p>"
+        }
+
+        transporter.sendMail(message, (error, info) => {
+            if (error) {
+                console.log(error.message);
+                // Logs.addLog(level.error, error.message, error.stack)
+                return;
+            }
+            console.log('Server responded with "%s"', info.response);
+            // Logs.addLog(level.info, `SMTP Server responded with ${info.response} for User - ${user.id}`, '')
+            transporter.close();
+        });
         
         return res.status(200).json({
             success: true,

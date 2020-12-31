@@ -2,6 +2,7 @@
 const stripe = require('stripe')(process.env.SECRET_KEY)
 
 
+
 const calculateOrderAmount = async (items) => {
     var itemprice = []
   
@@ -37,7 +38,9 @@ const getPriceForProduct = async (items) => {
 }
 
 
+
+
 module.exports = {
     calculateOrderAmount,
-    getPriceForProduct
+    getPriceForProduct,
 }

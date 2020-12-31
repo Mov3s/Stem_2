@@ -6,6 +6,9 @@ const ResetPasswordSchema = new mongoose.Schema({
     ref: 'user',
     required: true
   },
+  usedTokens: {
+    type: [String]
+  },
   oldpassword: {
       type: String,
   },

@@ -26,12 +26,18 @@ const auth = async (req, res, next) => {
             if(error){
 
               if (error.message === 'jwt expired'){
-                Logs.addLog(level.level.error, error.message, error)
-                return res.status(401).json({ msg: error.message });
+                Logs.addLog(level.level.error, error.name + ': '+error.message, error.stack)
+                return res.status(401).json({ success: false, msg: error.message });
               }
 
-              Logs.addLog(level.level.error, error.message, error)
-              return res.status(401).json({ msg: 'Invalid Authorization Token' });
+              if (error.message === 'invalid signature'){
+                Logs.addLog(level.level.error, error.name + ': '+error.message, error.stack)
+                return res.status(401).json({ success: false, msg: 'Invalid Authorization Token' });
+              }
+
+              Logs.addLog(level.level.error, error.name + ': '+error.message, error.stack)
+              return res.status(401).json({ success: false, msg: 'Invalid Authorization Token' });
+
             }
             
             req.user = {}
@@ -41,7 +47,7 @@ const auth = async (req, res, next) => {
 
             if (!user){
               Logs.addLog(level.level.error, "UNAUTHORIZED ACCESS", error.message)
-              return res.status(401).json({message: err.message})
+              return res.status(401).json({message: error.message})
             }else{
               // req.user.isAdmin = user.isAdmin ? user.isAdmin : false
               const refreshToken = RefreshToken.find({user: user._id})
@@ -56,7 +62,7 @@ const auth = async (req, res, next) => {
   } catch (error) {
     //Authentication failed
     Logs.addLog(level.error, error.message, error)
-    return res.status(500).json({ msg: err.message });
+    return res.status(500).json({ msg: error.message });
   }
 
 }
