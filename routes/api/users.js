@@ -14,6 +14,8 @@ const Customer = require('../../models/Customer');
 const UserService = require('../../middleware/user-service');
 const { setTokenCookie, getNextSequence } = require('../../utils/myUtils')
 
+const { asyncTransporter } = require('../../utils/transporter')
+
 
 //@route   GET api/users
 //@desc    Get all users in db.... info for Admin page 
@@ -34,6 +36,7 @@ router.get('/', auth, async (req, res, next) => {
     res.status(500).json("Server Error")
   }
 })
+
 
 // @route    POST api/users
 // @desc     Register user account
@@ -65,7 +68,7 @@ router.post(
 
       setTokenCookie(res, refreshToken)
 
-      console.log(user._id)
+      // console.log(user._id)
 
       const seq = await getNextSequence(mongoose.connection.db, 'customerId')
       console.log(seq)
@@ -76,7 +79,32 @@ router.post(
       })
       await customer.save()
 
+      let signUpMessage = {
+        from: `InphinityX <${process.env.GMAIL}>`,
+        to: email,
+    
+        // Subject of the message
+        subject: 'Welcome!!', 
+        html: 
+            '<html>' + 
+                '<p>Hi,</p>' +
+                '<p>Thank you for signing up to InPhinityX!</p>' +
+                '<p>We are so delighted you have chosen to be part of the Family.</p>' +
+                '<p>Don’t forget to sign up for the Newsletter and be the first to get new Discount Codes when they drop </p>'+
+                '<p>Best</p>' +
+                '<p>InphinityX</p>' +
+            '</html>',
+      }
+
+      const signUpSent = await asyncTransporter(signUpMessage)
+
+      if (signUpSent){
+        console.log('Sign uP email sent')
+      }
+
       return res.status(200).json({
+        success: true,
+        confirmationSent: signUpSent,
         user,
         jwtToken
       })
@@ -119,7 +147,7 @@ router.post(
       // );
     } catch (err) {
       // console.error(err);
-      return res.status(404).json({ error: { message: err.message } });
+      return res.status(404).json({ success: false, error: { message: err.message } });
     }
   }
 );

@@ -44,25 +44,18 @@ router.post(
     const { username, password } = req.body;
     const ipaddress = req.ip
 
-    try {
-
-      UserService.authenticate({username, password, ipaddress})
-      .then(({refreshToken, jwtToken, ...user}) => {
-        setTokenCookie(res, refreshToken)
-        return res.status(200).json({
-          user,
-          jwtToken
-        })
-      }).catch((error) => {
-        return res.status(400).json({
-          error
-       });
+    UserService.authenticate({username, password, ipaddress})
+    .then(({refreshToken, jwtToken, ...user}) => {
+      setTokenCookie(res, refreshToken)
+      return res.status(200).json({
+        user,
+        jwtToken
       })
-
-    } catch (err) {
-      console.error(err);
-      return res.status(500).send({  message: err.message });
-    }
+    }).catch((error) => {
+      return res.status(400).json({
+        error
+      });
+    })
   }
 );
 

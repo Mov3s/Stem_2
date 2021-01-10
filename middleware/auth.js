@@ -9,6 +9,8 @@ const Logs =  require('../models/Logs')
 const level = require('../utils/LogLevel')
 require('dotenv').config()
 
+const { decrypt } = require('../routes/stripe/utils/myUtils')
+
 const auth = async (req, res, next) => {
   const secret = process.env.JWTSECRET
 
@@ -22,7 +24,9 @@ const auth = async (req, res, next) => {
 
   //verifytoken with jsonwebtoken
   try {
-        await jwt.verify(token, secret, async (error, decoded) => {
+
+        const decryptedToken = decrypt(token)
+        await jwt.verify(decryptedToken, secret, async (error, decoded) => {
             if(error){
 
               if (error.message === 'jwt expired'){
@@ -46,8 +50,8 @@ const auth = async (req, res, next) => {
             const user = await User.findById(req.user.id)
 
             if (!user){
-              Logs.addLog(level.level.error, "UNAUTHORIZED ACCESS", error.message)
-              return res.status(401).json({message: error.message})
+              Logs.addLog(level.level.error, `User - ${req.user.id} doesn't exist`, error.message)
+              return res.status(401).json({ msg: 'User not found' })
             }else{
               // req.user.isAdmin = user.isAdmin ? user.isAdmin : false
               const refreshToken = RefreshToken.find({user: user._id})

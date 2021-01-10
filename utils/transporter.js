@@ -8,7 +8,6 @@ let logger = bunyan.createLogger({
 logger.level('trace');
 
 const getTransporter = () => {
-
   var transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
@@ -38,6 +37,54 @@ const getTransporter = () => {
   return transporter
 }
 
+const asyncTransporter = (mailOptions) => {
+  return new Promise((resolve, reject) => {
+
+    const transporter = getTransporter()
+          
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.log(error.message);
+          resolve(false); 
+        }else {
+          console.log('Server responded with "%s"', info.response);
+          console.log(info)
+          resolve(true)
+        }
+        transporter.close();
+    });
+  })
+}
+
+
+const generateTable = (data) => {   
+  
+    let message = ( 
+      '<table style="border: 1px solid #333;width:100%;">' +
+      '<thead style="text-align:left;">' +
+      '<th > Image </th>' +
+      '<th> Name </th>' +
+      '<th> Qty </th>'  +
+      '<th> Price </th>'  +
+      '</thead>')
+
+      for (item of data){
+        message += '<tr>' +
+                  `<td><img src="${item.image}" alt="${item.name}" style="width:100px;height:100px"/> `+
+                  '<td>' + item.name + '</td>' +
+                  '<td>' + item.quantity + 'x'+ '</td>' +
+                  '<td>' + item.price + '</td>' +
+                '</tr>'
+      }
+    
+      message += '</table>'
+      
+      return message
+}
+
+
 module.exports = {
-    getTransporter
+    getTransporter,
+    asyncTransporter,
+    generateTable
 };

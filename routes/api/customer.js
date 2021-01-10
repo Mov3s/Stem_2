@@ -99,10 +99,10 @@ router.get('/:idx', auth, async (req, res, next) => {
 })
 
 
-// @route    GET api/customers/my/address
+// @route    GET api/customers/my/details
 // @desc     Get customer address for checkout  
 // @access   Private - for registered users..
-router.get('/my/address', auth, async (req, res, next) => {
+router.get('/my/details', auth, async (req, res, next) => {
 
     try{
 
@@ -111,15 +111,12 @@ router.get('/my/address', auth, async (req, res, next) => {
        if (!customer || customer.length === 0) return res.status(404).json("Customer not found")
 
        const details = {
-           address : customer.address ? customer.address : null,
-           city : customer.city ? customer.city: null,
-           eirCode : customer.eirCode ? customer.eirCode : null,
-           country : customer.country ? customer.country : null,
            firstname : customer.firstname ? customer.firstname : null,
-           lastname: customer.lastname ? customer.lastname : null
+           lastname: customer.lastname ? customer.lastname : null,
+           phonenumber : customer.phonenumber ? customer.phonenumber : null
        }
 
-       return res.status(200).json({ success: true, data: details })
+       return res.status(200).json({ success: true, details: details })
 
     }catch(e){
        console.log(e)
@@ -223,7 +220,7 @@ router.put('/',
 
     try{
 
-        const { idx, firstname, lastname, address, email, birthday, eirCode, groups, city, newsletter, ordered, country } = req.body
+        const { idx, firstname, lastname, address, email, birthday, eirCode, groups, city, newsletter, ordered, country, phonenumber } = req.body
 
         const userId = req.user.id
 
@@ -238,6 +235,7 @@ router.put('/',
 
         customer.lastname = lastname ? lastname : customer.lastname;
         customer.firstname = firstname ? firstname : customer.firstname;
+        customer.phonenumber = phonenumber ? phonenumber : customer.phonenumber;
         customer.address = address ? address : customer.address;
         customer.birthday = birthday ? birthday : customer.birthday;
         customer.country = country ? country : customer.country;

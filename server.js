@@ -84,6 +84,8 @@ app.use('/api/create-payment-intent', require('./routes/stripe/createPaymentInte
 app.use('/api/confirm-payment-intent', require('./routes/stripe/confirmPaymentIntent'))
 app.use('/api/create-session', require('./routes/stripe/createSession'))
 
+app.use('/api/confirm-session', require('./routes/stripe/confirmSession'))
+
 //Test routes
 app.get('/test', async (req, res) => {
 

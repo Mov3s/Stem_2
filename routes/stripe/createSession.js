@@ -7,12 +7,25 @@ const bcrypt = require('bcryptjs');
 const auth = require('../../middleware/auth');
 const jwt = require('jsonwebtoken')
 const { check, validationResult } = require('express-validator');
+const mongoose = require('mongoose')
 
 const Customer = require('../../models/Customer') 
 const User = require('../../models/User')
+const CheckOutSession = require('../../models/CheckOutSession')
 
-const { calculateOrderAmount, getPriceForProduct } = require('./utils/myUtils')
-const MYDOMAIN = 'http://localhost:3000';
+const { calculateOrderAmount,
+        getPriceForProduct, 
+        getShipping, 
+        randomString,
+        // getShippingPrice
+      } = require('./utils/myUtils');
+
+
+const { getNextSequence } = require('../../utils/myUtils')
+
+const Orders = require('../../models/Orders');
+
+// const MYDOMAIN = 'http://localhost:3000';
 
 
 //@route /api/create-session
@@ -34,12 +47,16 @@ async (req, res) => {
     }
 
     try{
-        const { items, shippingAddress } = req.body
+        const { items, details } = req.body
+
+        console.log(details)
+
+        const MYDOMAIN = process.env.CLIENT_URL
 
         // console.log(req.user.ownsToken())
         const mCustomer = await Customer.find({ user_id: req.user.id})
 
-        if (mCustomer.length === 0){
+        if (!mCustomer || mCustomer.length === 0){
           return res.status(404).json({error: 'Customer Not Found'})
         }
 
@@ -55,9 +72,25 @@ async (req, res) => {
           })
         }
 
-        const lineitems = await getPriceForProduct(items)
-        console.log(lineitems)
+        const { lineitems, excludeShipping, total } = await getPriceForProduct(items)
 
+        let deliveryFee, orderTotal
+
+        if (!excludeShipping){
+          const shippingId = process.env.SHIPPING_ID
+
+          const { line, price } = await getShipping(shippingId)
+
+          deliveryFee = price
+          lineitems.push(line)
+
+          orderTotal = total
+          orderTotal += price
+
+        }else{
+          orderTotal = total
+        }
+    
         const session = await stripe.checkout.sessions.create({
           customer: stripeCustomer.data[0].id,
           payment_method_types: ['card'],
@@ -75,23 +108,62 @@ async (req, res) => {
           },
         });
 
-        console.log(stripeCustomer.data[0].metadata.lastSession)
-        const customermeta = stripeCustomer.data[0].metadata
+        //saving to new model, to retrieve session info later
+        //begin
+       
+
+        const orderId = await getNextSequence(mongoose.connection.db, 'orderId')
+
+        const checkout = new CheckOutSession({
+          sessionId: session.id,
+          user: req.user.id,
+          stripeuser: stripeCustomer.data[0].id,
+          order_id: orderId
+        })
+
+        const user = await User.findById(req.user.id)
+
+        const order = new Orders({
+          idx: orderId,
+          customer_id: mCustomer[0].idx,
+          reference: randomString(10),
+          status: 'ordered',
+          basket: items,
+          total: orderTotal,
+          delivery_fee: deliveryFee ? deliveryFee : 0,
+          total_exc_taxes: orderTotal,
+          stripe_email: user.email,
+          stripe_payment_intent: session.payment_intent
+        })
+
+        mCustomer[0].has_ordered = true
+
+        await mCustomer[0].save()
+
+        await order.save()
+
+        await checkout.save()
+        //end
 
         await stripe.customers.update(
           stripeCustomer.data[0].id,
           {
           metadata: { 
-            lastSession: session.id
+            lastSession: session.id,
+            phonenumber: details.phonenumber
           }
         })
 
-        return res.status(200).json({ "success": true, id: session.id });
+        return res.status(200).json({ 
+          success: true, 
+          id: session.id 
+        });
+
     }catch(e){
         console.log(e)
         return res.status(500).json({ 
-          "success": false,
-          "message": e.message
+          success: false,
+          message: e.message
         })
     }
   });
@@ -117,15 +189,35 @@ async (req, res) => {
     }
 
     try{
-        const {items, email} = req.body
+        const {items, email, details} = req.body
+
         let customers = await stripe.customers.list({
           email: email.toString(),
         })
 
-        console.log('[GUEST]', customers)
-        const lineitems = await getPriceForProduct(items)
+        //Use orders in confrim to update the values and shit 
 
-        console.log(lineitems)
+        const MYDOMAIN = process.env.CLIENT_URL
+
+        // console.log('[GUEST]', customers)
+        const { lineitems, excludeShipping, total } = await getPriceForProduct(items)
+
+        let deliveryFee, orderTotal
+
+        if (!excludeShipping){
+          const shippingId = process.env.SHIPPING_ID
+
+          const { line, price } = await getShipping(shippingId)
+
+          deliveryFee = price
+          lineitems.push(line)
+
+          orderTotal = total
+          orderTotal += price
+
+        }else{
+          orderTotal = total
+        }
 
         if (customers.data.length === 0){
           const session = await stripe.checkout.sessions.create({
@@ -140,10 +232,47 @@ async (req, res) => {
             shipping_address_collection: {
               allowed_countries: ['IE', 'GB'],
             },
+            metadata: { 
+              phonenumber: details.phonenumber,
+              firstname: details.firstname,
+              lastname: details.lastname,
+            }
           });
+
+          //saving to new model, to retrieve session info later
+          //begin
+
+          const orderId = await getNextSequence(mongoose.connection.db, 'orderId')
+
+          const checkout = new CheckOutSession({
+            sessionId: session.id,
+            user: email.toString(),
+            order_id: orderId
+           // stripeuser: stripeCustomer.data[0].id
+          })
+
+          const order = new Orders({
+            idx: orderId,
+            reference: randomString(10),
+            status: 'ordered',
+            basket: items,
+            total: orderTotal,
+            delivery_fee: deliveryFee ? deliveryFee : 0,
+            total_exc_taxes: orderTotal,
+            stripe_email: email.toString(),
+            stripe_payment_intent: session.payment_intent,
+            stripe_session_id: session.id
+          })
+
+          await order.save()
+
+          await checkout.save()
+          //end
+
           return res.status(200).json({ "success": true, id: session.id });
 
         }else{
+
           const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: lineitems,
@@ -157,15 +286,61 @@ async (req, res) => {
               allowed_countries: ['IE', 'GB'],
             },
           });
+
+          //saving to new model, to retrieve session info later
+          //begin
+
+          const orderId = await getNextSequence(mongoose.connection.db, 'orderId')
+
+          const checkout = new CheckOutSession({
+            sessionId: session.id,
+            user: customers.data[0].email,
+            stripeuser: customers.data[0].id,
+            order_id: orderId,
+          })
+
+          const order = new Orders({
+            idx: orderId,
+            reference: randomString(10),
+            status: 'ordered',
+            basket: items,
+            total: orderTotal,
+            delivery_fee: deliveryFee ? deliveryFee : 0,
+            total_exc_taxes: orderTotal,
+            stripe_email: email.toString(),
+            stripe_payment_intent: session.payment_intent,
+            stripe_session_id: session.id
+          })
+
+          await order.save()
+
+          await checkout.save()
+          //end
+
+          await stripe.customers.update(
+            customers.data[0].id,
+            {
+              metadata: { 
+                lastSession: session.id,
+                phonenumber: details.phonenumber,
+                firstname: details.firstname,
+                lastname: details.lastname,
+              }
+            }
+          )
+
           return res.status(200).json({"success": true, id: session.id });
-        }
+       }
+
     }catch(e){
         console.log(e)
         return res.status(500).json({ 
-          "success": false,
-          "message": e.message
+          success: false,
+          message: e.message
         })
     }
   });
+
+
 
 module.exports = router

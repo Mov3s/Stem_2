@@ -3,7 +3,8 @@ const router = express.Router();
 
 const EmailsForNewsletter = require('../../models/EmailsForNewsletter')
 const { check, validationResult } = require('express-validator');
-const { getTransporter } = require('../../utils/transporter')
+
+const { asyncTransporter } = require('../../utils/transporter')
 
 
 // @route    POST api/newsletter
@@ -35,39 +36,35 @@ router.post('/',
 
         await toSave.save()
 
-        const transporter = getTransporter()
-
         let message = {
-            from: 'InphinityX <housesubletting@gmail.com>',
+            from: `InphinityX <${process.env.GMAIL}>`,
             to: email,
         
             // Subject of the message
-            subject: 'Newsletter ✔ #', 
+            subject: 'Thank you for signing up to the InPhinityX Newsletter', 
 
-            html: "<p>Signed up for newsletter successfully</p>" +
-                "<p>Thanks</p>"+
+            html: "<p>Hi,</p>" +
+                "<p>Thanks for signing up to InPhinityX Newsletter!</p>"+
+                "<p>We are so delighted you have chosen to be part of the Family, and hope you have a great time on our website.</p>"+
+                "<p>Keep your eyes peeled for our special discount codes delivered to your email from time to time.</p>"+
+                "<p>Warm hugs</p>"+
                 "<p>The InphinityX Team</p>"
         }
 
-        transporter.sendMail(message, (error, info) => {
-            if (error) {
-                console.log(error.message);
-                // Logs.addLog(level.error, error.message, error.stack)
-                return;
-            }
-            console.log('Server responded with "%s"', info.response);
-            // Logs.addLog(level.info, `SMTP Server responded with ${info.response} for User - ${user.id}`, '')
-            transporter.close();
-        });
+        const newLetterSent = await asyncTransporter(message)
         
         return res.status(200).json({
             success: true,
-            message: ''
+            message: '', 
+            confirmationSent: newLetterSent
         })
 
     }catch(e){
         // console.log(e)
-        return res.status(500).json({error: e.message})
+        return res.status(500).json({
+            success: false,
+            error: e.message
+        })
     }
 })
 

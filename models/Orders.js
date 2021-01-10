@@ -8,11 +8,21 @@ const OrdersSchema = new mongoose.Schema({
   },
   customer_id: {
     type: Number,
-    ref: 'user',
-    required: true
+    ref: 'customer',
+   // required: true
+  },
+  stripe_email: {
+    type: String
+  },
+  stripe_payment_intent: {
+    type: String
+  },
+  stripe_session_id:{
+    type: String
   },
   invoiced:{
-    type: Boolean
+    type: Boolean,
+    default: false
   },
   reference: {
     type: String,
@@ -20,15 +30,17 @@ const OrdersSchema = new mongoose.Schema({
   },
   returned: {
     type: Boolean,
+    default: false
   },
   status: {
-    type: String
-    //ordered [pending invoice] //invoiced //delivered [invoiced] //cancelled [not invoiced]
+    type: String,
+    enum: ['ordered', 'paid', 'invoiced', 'delivered', 'cancelled']
+    //ordered [pending invoice] // paid //invoiced //delivered [invoiced] //cancelled [not invoiced]
   },
   basket: [{
-      product_id: {
+      product: {
           type: Number,
-          ref: 'product'
+          // ref: 'product'
       }, 
       quantity: {
           type: Number
@@ -44,20 +56,13 @@ const OrdersSchema = new mongoose.Schema({
     type: Number,
   },
   tax_amount: {
-    type: Number
+    type: Number,
+    default: 0
   },
   delivery_fee: {
-    type: Number
+    type: Number,
   },
-  dateUpdated: {
-    type: Date,
-    default: Date.now
-  },
-  date: {
-    type: Date,
-    default: Date.now
-  }
-});
+}, { timestamps: true });
 
 
 OrdersSchema.statics.textSearch = (filter, sort, range, cb) => {

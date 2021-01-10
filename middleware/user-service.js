@@ -15,9 +15,13 @@ const authenticate = async ({ username, password, ipAddress }) => {
 
     const user = await User.findOne({ email: username });
 
+    if (!user){
+        throw "Username or password is incorrect"
+    }
+
     const isMatch =  await bcrypt.compare(password, user.password)
 
-    if (!user || !isMatch) {
+    if (!isMatch) {
         throw 'Username or password is incorrect';
     }
 

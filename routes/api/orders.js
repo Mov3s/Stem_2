@@ -16,7 +16,6 @@ const Orders = require('../../models/Orders');
 const Product = require('../../models/Product');
 const Customer = require('../../models/Customer');
 const { getNextSequence, setHeaderForPartial } = require('../../utils/myUtils');
-const { Console } = require('console');
 
 
 // ******************ADMIN

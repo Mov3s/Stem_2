@@ -181,9 +181,17 @@ ProductSchema.statics.findByCategory = (category_id, sort, range, cb) => {
 ProductSchema.statics.sort = (sort, range, cb) => {
 
     if (sort[1] === 'ASC'){
-        return Product.find({}, {_id: 0, __v:0}).limit(range[1]).sort(`${sort[0]}`).exec(cb)
+        return Product.find({ 
+            name : { 
+                $ne: 'Shipping'
+            }
+        }, {_id: 0, __v:0}).limit(range[1]).sort(`${sort[0]}`).exec(cb)
     }else{
-        return Product.find({}, {_id: 0, __v:0}).limit(range[1]).sort(`-${sort[0]}`).exec(cb)
+        return Product.find({
+            name : { 
+                $ne: 'Shipping'
+            }
+        }, {_id: 0, __v:0}).limit(range[1]).sort(`-${sort[0]}`).exec(cb)
     }
 }
 
@@ -191,7 +199,16 @@ ProductSchema.statics.textSearch = (filter, sort, range, cb) => {
     if(sort[1] === 'ASC') {
   
       return Product.find({ 
-                      name: {$regex: filter.q, $options:'i'}
+                    $and: [
+                        {
+                            name: {$regex: filter.q, $options:'i'}
+                        },
+                        {
+                            name : { 
+                                $ne: 'Shipping'
+                            }
+                        }
+                    ]
                     }, {_id: 0, __v:0})
                   .sort(`${sort[0]}`)
                   .limit(parseInt(range[1]+1, 10))
@@ -199,7 +216,16 @@ ProductSchema.statics.textSearch = (filter, sort, range, cb) => {
     }else{
   
       return Product.find({ 
-                     name: {$regex: filter.q, $options:'i'},
+                    $and: [
+                        {
+                            name: {$regex: filter.q, $options:'i'}
+                        },
+                        {
+                            name : { 
+                                $ne: 'Shipping'
+                            }
+                        }
+                    ]
                     }, {_id: 0, __v:0})
                   .sort(`-${sort[0]}`)
                   .limit(parseInt(range[1]+1, 10))
@@ -212,15 +238,33 @@ ProductSchema.statics.findByPrice = ( filter, sort, range, cb) => {
     if(sort[1] === 'ASC') {
   
         return Product.find({ 
-                        price: {$lte: filter.price}
-                      }, {_id: 0, __v:0})
+                    $and: [
+                        {
+                            price: {$lte: filter.price}
+                        },
+                        {
+                            name : { 
+                                $ne: 'Shipping'
+                            }
+                        }
+                     ]
+                    }, {_id: 0, __v:0})
                     .sort(`${sort[0]}`)
                     .limit(parseInt(range[1]+1, 10))
                     .exec(cb)
       }else{
     
         return Product.find({ 
-                       price: {$lte: filter.price},
+                    $and: [
+                        {
+                            price: {$lte: filter.price}
+                        },
+                        {
+                            name : { 
+                                $ne: 'Shipping'
+                            }
+                        }
+                    ]
                       }, {_id: 0, __v:0})
                     .sort(`-${sort[0]}`)
                     .limit(parseInt(range[1]+1, 10))

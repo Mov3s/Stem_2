@@ -12,6 +12,9 @@ const CustomerSchema = new mongoose.Schema({
   lastname:{
       type: String
   },
+  phonenumber: {
+      type: String
+  },
   user_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'user'
@@ -42,20 +45,20 @@ const CustomerSchema = new mongoose.Schema({
       default: Date.now
       //update on last logout
   },
-  latest_purchase:{
-      type: Date,
-      //update on last purchase 
-  },
-  nb_orders: {
-      type: Number,
-      default: 0,
-      //update on last purchase
-  },
-  totalSpent: {
-      type: Number,
-      default: 0
-      //update on last purchase
-  },
+//   latest_purchase:{
+//       type: Date,
+//       //update on last purchase 
+//   },
+//   nb_orders: {
+//       type: Number,
+//       default: 0,
+//       //update on last purchase
+//   },
+//   totalSpent: {
+//       type: Number,
+//       default: 0
+//       //update on last purchase
+//   },
   eirCode:{
       type: String
   },

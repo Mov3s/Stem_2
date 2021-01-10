@@ -65,7 +65,11 @@ router.get('/', async (req, res, next) => {
 
         if (Object.keys(req.query).length === 0) {
 
-            products = await Product.find({},{__v: 0, _id:0});
+            products = await Product.find({
+                name : { 
+                    $ne: 'Shipping'
+                }
+            },{__v: 0, _id:0});
     
             if (!products) return res.status(404).json("Products not Found")
 
@@ -156,10 +160,12 @@ router.get('/', async (req, res, next) => {
                                 }
                             },
                             {
-                                category_id : { $in: categoryIds}
+                                category_id : { 
+                                    $in: categoryIds
+                                }
                             }
                         ]
-                    })
+                    }).limit(2)
                 }
 
                 if (!products) return res.status(400).json("Product not Found")
@@ -193,7 +199,7 @@ router.get('/', async (req, res, next) => {
 
             if(filter.category_name){
 
-                let category = await Category.findOne({ name: filter.category_name})
+                let category = await Category.findOne({ name: filter.category_name}, {__id:0, __v: 0})
 
                 products = await Product.find({ category_id : category.idx})
 
@@ -210,7 +216,18 @@ router.get('/', async (req, res, next) => {
                 var twoWeeksAgo = moment().subtract(20, 'day');
                 var today = moment()
 
-                products = await Product.find({ date : { $gte: twoWeeksAgo, $lt: today} }).sort(filter.new)
+                products = await Product.find({ 
+                    $and: [
+                        {
+                            date : { $gte: twoWeeksAgo, $lte: today} 
+                        },
+                        {
+                            name : { 
+                                $ne: 'Shipping'
+                            }
+                        }
+                    ]
+                }, {__id:0, __v: 0}).sort(filter.new)
 
                 if(!products) return res.status(404).json("Product not Found")
                 
@@ -222,7 +239,7 @@ router.get('/', async (req, res, next) => {
 
             if (filter.featured){
                 console.log(filter)
-                products = await Product.find({ featured : true }).limit(5)
+                products = await Product.find({ featured : true }, {__id:0, __v: 0}).limit(5)
 
                 if(!products) return res.status(404).json("Product not Found")
                 console.log(products.length)
@@ -230,6 +247,17 @@ router.get('/', async (req, res, next) => {
                 Product.GetThumbnails(products).then((productList) => {
                     Product.setContentLimit(res, header, range, count)
                     return res.status(206).json(productList)
+                })
+            }
+
+            if (filter.shipping){
+                products = await Product.findOne({ name: 'Shipping'}, {__id:0, __v: 0})
+
+                if (!products) return res.status(404).json("Product not Found")
+
+                return res.status(200).json({ 
+                    success: true, 
+                    price: products.price
                 })
             }
 
@@ -241,7 +269,7 @@ router.get('/', async (req, res, next) => {
         
     } catch (error) {
         // console.log(error)
-        return res.status(500).json({ error: error.message})
+        return res.status(500).json({ success: false, error: error.message})
     }
 })
 
@@ -285,19 +313,21 @@ router.get('/:idx', async (req, res, next) => {
             review.status === 'accepted' 
         )
 
-        let reviewTotal = 0
-        filteredReviews.map((review) => {
-            reviewTotal += review.rating 
-        })
+        let reviewTotal = 0, reviewAverage
+        if (filteredReviews > 0){
+            filteredReviews.map((review) => {
+                reviewTotal += review.rating 
+            })
+        }
 
-        const reviewAverage = reviewTotal/filteredReviews.length
+        reviewAverage = reviewTotal/filteredReviews.length
 
         product = JSON.parse(JSON.stringify(product))
 
         product.base64Images = base64Images
 
         product.reviewCount = reviewsCount
-        product.reviewAverage = parseFloat(reviewAverage.toFixed(1))
+        product.reviewAverage = isNaN(reviewAverage) ? 0 : parseFloat(reviewAverage.toFixed(1))
 
         return res.status(200).json({           
            product

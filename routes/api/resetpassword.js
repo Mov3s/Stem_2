@@ -28,7 +28,6 @@ const Customer = require('../../models/Customer');
 
 const { getTransporter } = require('../../utils/transporter')
 
-const liveLink = 'http://localhost:3000'
 
 //TEST ROUTE
 // @route    GET api/resetpassword
@@ -112,6 +111,12 @@ router.post('/',
     ],
     async (req, res) => {
 
+    const errors = validationResult(req);
+    // console.log(errors)
+    if (!errors.isEmpty()) {
+        return res.status(404).json({ errors: errors.array() });
+    }
+
     try{
 
         const secret = process.env.JWTSECRET
@@ -130,7 +135,7 @@ router.post('/',
         
         const transporter = getTransporter()
         let message = {
-            from: 'InphinityX <housesubletting@gmail.com>',
+            from: `InphinityX <${process.env.GMAIL}>`,
             to: user.email,
         
             // Subject of the message
@@ -140,9 +145,9 @@ router.post('/',
             text: 'Follow this link to reset your password',
 
             html: "<p>We heard that you lost your InphinityX password. Sorry about that</p>" +
-                `<p>But don’t worry! You can use the following link to reset your password: <a href='${liveLink}/resetpassword/${newToken}'>${liveLink}/resetpassword/${newToken}</a></p>`+
-                "<p>If you don’t use this link within 3 hour, it will expire.</p>"+
-                `<p>To get a new password reset link, visit <a href='${liveLink}/resetpassword'>${liveLink}/resetpassword</a></p><br/>` +
+                `<p>But don’t worry! You can use the following link to reset your password: <a href='${process.env.CLIENT_URL}/resetpassword/${newToken}'>${process.env.CLIENT_URL}/resetpassword/${newToken}</a></p>`+
+                "<p>If you don’t use this link within 1 hour, it will expire.</p>"+
+                `<p>To get a new password reset link, visit <a href='${process.env.CLIENT_URL}/resetpassword'>${process.env.CLIENT_URL}/resetpassword</a></p><br/>` +
                 "<p>Thanks</p>"+
                 "<p>The InphinityX Team</p>"
         }
@@ -186,6 +191,12 @@ router.post('/finish',
         ]
     ],
     async (req, res) => {
+        
+    const errors = validationResult(req);
+    // console.log(errors)
+    if (!errors.isEmpty()) {
+        return res.status(404).json({ errors: errors.array() });
+    }
 
     try{
 
@@ -302,15 +313,15 @@ router.post('/finish',
 
             //user exist reset password and sendEmail
         let message = {
-            from: 'InphinityX <housesubletting@gmail.com>',
+            from: `InphinityX <${process.env.GMAIL}>`,
             to: user.email,
         
             // Subject of the message
             subject: 'Reset Password Successful✔ #', 
 
-            html: `<p>Hello ${customer.length > 0 ? customer[0].lastname : user.email},</p>` +
+            html: `<p>Hello ${customer.length > 0 ? customer[0].lastname + ',' : ''}</p>` +
                 `<p>We wanted to let you know that your InphinityX password was reset</p>`+
-                `<p>If you did not perform this action, you can recover access by entering ${user.email} into the form at <a href='${liveLink}'/resetpassword'>${liveLink}/resetpassword</a> </p>`+
+                `<p>If you did not perform this action, you can recover access by entering ${user.email} into the form at <a href='${process.env.CLIENT_URL}'/resetpassword'>${process.env.CLIENT_URL}/resetpassword</a> </p>`+
                 `<p>Please do not reply to this email with your password. We will never ask for your password, and we strongly discourage you from sharing it with anyone.</p><br/>` +
                 "<p>Thanks</p>"+
                 "<p>The InphinityX Team</p>"
@@ -338,7 +349,6 @@ router.post('/finish',
         return res.status(500).json({ success: false, error: error.message})
     }
 })
-
 
 
 module.exports = router;
