@@ -108,7 +108,11 @@ router.post(
         user,
         jwtToken
       })
-    }).catch(next)
+    }).catch((error) => {
+      return res.status(400).json({
+        error
+      });
+    })
 
     //   var user = await User.findOne({ email });
 
@@ -147,7 +151,7 @@ router.post(
       // );
     } catch (err) {
       // console.error(err);
-      return res.status(404).json({ success: false, error: { message: err.message } });
+      return res.status(500).json({ success: false, error: { message: err.message } });
     }
   }
 );
