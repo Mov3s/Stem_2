@@ -76,7 +76,16 @@ const findChunksForThumbnail =  async (products) =>{
         const imageBinary = await chunksCollection.find({ "files_id" : mongoose.Types.ObjectId(blobsJSON[0]._id) }).toArray()
         _imageBinaryJSON = JSON.parse(JSON.stringify(imageBinary))
         products = JSON.parse(JSON.stringify(products))
-        products.base64 = base64String(_imageBinaryJSON[0].data, ext)
+
+        let chunksData = ''
+        if (_imageBinaryJSON.length > 1){
+            _imageBinaryJSON.forEach(chun => {
+                chunksData += chun.data
+            });
+        }else{
+            chunksData = _imageBinaryJSON[0].data
+        }
+        products.base64 = base64String(chunksData, ext)
 
         return products
     }

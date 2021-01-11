@@ -302,7 +302,16 @@ router.get('/:idx', async (req, res, next) => {
 
             var chunksJSON = JSON.parse(JSON.stringify(chunks))
 
-            base64Images.push(base64String(chunksJSON[0].data, ext))
+            let chunksData = ''
+            if (chunksJSON.length > 1){
+                chunksJSON.forEach(chun => {
+                    chunksData += chun.data
+                });
+            }else{
+                chunksData = chunksJSON[0].data
+            }
+
+            base64Images.push(base64String(chunksData, ext))
         }
 
         const reviews = await Reviews.find({ product_id: product.idx})

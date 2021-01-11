@@ -43,6 +43,7 @@ SectionSchema.statics.saveBlogImages = (res, bucket, files) => {
             Logs.addLog(level.info, `Upload Success - ${newName}`, '')
             //next()
         })
+        
         return newName
     }
 }

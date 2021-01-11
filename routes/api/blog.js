@@ -287,7 +287,6 @@ router.post('/',
         //asume sections is an array
         const image = req.files['titleImage'] ? req.files['titleImage'] : null
 
-        console.log(req.body)
 
         const sectionBucket = new mongodb.GridFSBucket(mongoose.connection.db, {
             bucketName: 'sectionImages'
