@@ -21,7 +21,7 @@ const { getNextSequence, base64String, generateUniqueName } = require('../../uti
 const multer = require('multer')
 const memStorage = multer.memoryStorage()
 //fieldSize = 6mb
-var upload = multer({storage: memStorage, limits: {fieldSize: 6000000 , fields: 5, files: 3 }}).fields([{name:'images'}])
+var upload = multer({storage: memStorage, limits: {fieldSize: 6000000 , fields: 5, files: 4 }}).fields([{name:'images'}])
 
 
 // @route    GET api/extra
@@ -33,10 +33,10 @@ router.get('/', async (req, res, next) => {
         // const { text, image, story} = req.body
         var extras = await Extras.find({}, {__v:0, _id: 0})
         
-        if (!extras || extras.length == 0) return res.status(500).json("No data")
+        if (!extras || extras.length === 0) return res.status(404).json({ msg: 'No data'})
 
         const imageNames = extras.map(img => img.landingImages)
-        console.log(imageNames)
+        // console.log(imageNames)
         //Extra Images
         const imageChunksCollecttion =  mongoose.connection.db.collection("LandingImages.chunks")
 
@@ -58,8 +58,17 @@ router.get('/', async (req, res, next) => {
             const chunks = await imageChunksCollecttion.find({ files_id: mongoose.Types.ObjectId(ress[0]._id) }).toArray()
 
             var chunksJSON = JSON.parse(JSON.stringify(chunks))
+
+            let chunksData = ''
+            if (chunksJSON.length > 1){
+                chunksJSON.forEach(chun => {
+                    chunksData += chun.data
+                });
+            }else{
+                chunksData = chunksJSON[0].data
+            }
  
-            base64Images.push(base64String(chunksJSON[0].data, ext))
+            base64Images.push(base64String(chunksData, ext))
              
         }
 
@@ -106,8 +115,17 @@ router.get('/:id', async (req, res, next) => {
             const chunks = await imageChunksCollecttion.find({ files_id: mongoose.Types.ObjectId(ress[0]._id) }).toArray()
 
             var chunksJSON = JSON.parse(JSON.stringify(chunks))
+
+            let chunksData = ''
+            if (chunksJSON.length > 1){
+                chunksJSON.forEach(chun => {
+                    chunksData += chun.data
+                });
+            }else{
+                chunksData = chunksJSON[0].data
+            }
  
-            base64Images.push(base64String(chunksJSON[0].data, ext))
+            base64Images.push(base64String(chunksData, ext))
              
         }
 
@@ -130,6 +148,7 @@ router.post('/',
     [
         auth, 
         upload,
+        // resizeImage,
         [
             //for express-validator
         ]
@@ -144,14 +163,12 @@ router.post('/',
 
         const { landingText, aboutUs } = req.body 
 
-        console.log(req.body)
         const image = req.files['images']
-
-        console.log(" Image Size", image)
+        //req.body.images
 
         const imageNames = image ? image.map(img => generateUniqueName(img.originalname)) : []
+        //req.body.images ? req.body.images.map(img => generateUniqueName(img.originalname)) : [] 
 
-        console.log(imageNames)
         //add photo to bucket
         const bucket = new mongodb.GridFSBucket(mongoose.connection.db, {
             bucketName: 'LandingImages'
@@ -185,15 +202,23 @@ router.post('/',
             aboutUs: aboutUs,
         })
 
-        const newExta = await extra.save()
+        const newExtra = await extra.save()
 
-        return res.status(200).json(newExta)
+        const returnData = {
+            idx : seq,
+            aboutUs: newExtra.aboutUs,
+            date: newExtra.date,
+            dateUpdated: newExtra.dateUpdated,
+            landingText: newExtra.landingText,
+            landingImages: newExtra.landingImages
+        }
+
+        return res.status(200).json(returnData)
       
     } catch (error) {
-        console.log(error)
         Logs.addLog(level.error, error.message, error)
         const key = level.error
-        res.status(500).json({[key] : error.message})
+        return res.status(500).json({[key] : error.message})
     }
 })
 

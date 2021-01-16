@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 
 const ExtrasSchema = new mongoose.Schema({
   idx: {
-    type: Number
+    type: Number,
+    unique: true
   },
   landingText: {
     type: String
@@ -18,7 +19,7 @@ const ExtrasSchema = new mongoose.Schema({
     default: Date.now
   },
   dateUpdated:{
-    type: String,
+    type: Date,
     default: Date.now
   }
 });
