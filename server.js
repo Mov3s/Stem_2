@@ -4,8 +4,10 @@ const path = require('path');
 const cors = require('cors')
 const morgan = require('morgan')
 const helmet = require('helmet')
+const apicache = require('apicache')
 
 require('dotenv').config()
+const cache = apicache.middleware
 const stripe = require('stripe')(process.env.SECRET_KEY)
 
 // var passport = require('passport')
@@ -17,28 +19,19 @@ const RateLimit = require('express-rate-limit')
 // const RedisStore = require('rate-limit-redis');
 // const client = require('redis').createClient()
 
+//create express app
 const app = express();
 
 // Connect Database
 connectDB();
 
+const onlyStatus200 = (req, res) => res.statusCode === 200
+ 
+const cacheSuccesses = cache('5 minutes', onlyStatus200)
+
+app.use(cacheSuccesses)
+
 // Init Middleware
-// const allowedOrigins = ['http://localhost:3000', process.env.ALLOW_LIST];
-
-// app.use(cors({
-//   origin: (origin, callback) => {
-//     // allow requests with no origin 
-//     // (like mobile apps or curl requests)
-//     if(!origin) return callback(null, true);
-//     if(allowedOrigins.indexOf(origin) === -1){
-//       var msg = 'The CORS policy for this site does not ' +
-//                 'allow access from the specified Origin.';
-//       return callback(new Error(msg), false);
-//     }
-//     return callback(null, true);
-//   }
-// }));
-
 app.use(cors());
 app.use(helmet())
 app.use(express.json({extended: false}))
@@ -47,19 +40,6 @@ app.use(cookieParser());
 
 //For Request logging
 app.use(morgan('common'))
-
-// client.on("connect", function(error) {
-//   console.error("REDIS CONNECTED");
-// });
-
-// const limiter = new RateLimit({
-//   store: new RedisStore({
-//     client: client
-//   }),
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 100, // limit each IP to 100 requests per windowMs
-//   delayMs: 0 // disable delaying - full speed until the max limit is reached
-// });
 
 
 // app.use('/api/', limiter)
