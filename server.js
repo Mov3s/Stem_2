@@ -23,21 +23,21 @@ const app = express();
 connectDB();
 
 // Init Middleware
-const allowedOrigins = ['http://localhost:3000', process.env.ALLOW_LIST];
+// const allowedOrigins = ['http://localhost:3000', process.env.ALLOW_LIST];
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // allow requests with no origin 
-    // (like mobile apps or curl requests)
-    if(!origin) return callback(null, true);
-    if(allowedOrigins.indexOf(origin) === -1){
-      var msg = 'The CORS policy for this site does not ' +
-                'allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  }
-}));
+// app.use(cors({
+//   origin: (origin, callback) => {
+//     // allow requests with no origin 
+//     // (like mobile apps or curl requests)
+//     if(!origin) return callback(null, true);
+//     if(allowedOrigins.indexOf(origin) === -1){
+//       var msg = 'The CORS policy for this site does not ' +
+//                 'allow access from the specified Origin.';
+//       return callback(new Error(msg), false);
+//     }
+//     return callback(null, true);
+//   }
+// }));
 
 app.use(cors());
 app.use(helmet())
