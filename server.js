@@ -5,6 +5,7 @@ const cors = require('cors')
 const morgan = require('morgan')
 const helmet = require('helmet')
 const apicache = require('apicache')
+const compression = require('compression')
 
 require('dotenv').config()
 const cache = apicache.middleware
@@ -25,11 +26,11 @@ const app = express();
 // Connect Database
 connectDB();
 
-const onlyStatus200 = (req, res) => res.statusCode === 200
- 
-const cacheSuccesses = cache('5 minutes', onlyStatus200)
+// const onlyStatus200 = (req, res) => res.statusCode === 200 || res.statusCode === 204
+// const cacheSuccesses = cache('5 minutes', onlyStatus200)
 
-app.use(cacheSuccesses)
+// app.use(cacheSuccesses)
+app.use(compression())
 
 // Init Middleware
 app.use(cors());
@@ -41,7 +42,7 @@ app.use(cookieParser());
 //For Request logging
 app.use(morgan('common'))
 
-
+// app.options('*', cors(corsOptions)); /
 // app.use('/api/', limiter)
 
 app.use(require('./middleware/error-handler'))
