@@ -27,7 +27,7 @@ var upload = multer({storage: memStorage, limits: {fieldSize: 6000000 , fields: 
 
 const onlyStatusSuccess = (req, res) => res.statusCode === 200 || req.statusCode === 206
 
-const cacheSuccesses = cache('5 minutes', onlyStatusSuccess)
+const cacheSuccesses = cache('20 minutes', onlyStatusSuccess)
 
 // @route    GET api/extra
 // @desc     Get extras in db

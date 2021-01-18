@@ -21,7 +21,7 @@ const cache = apicache.middleware
 
 const onlyStatusSuccess = (req, res) => res.statusCode === 200 || req.statusCode === 206
 
-const cacheSuccesses = cache('5 minutes', onlyStatusSuccess)
+const cacheSuccesses = cache('20 minutes', onlyStatusSuccess)
 
 // @route    POST api/reviews
 // @desc     Add review 

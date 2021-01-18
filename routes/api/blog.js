@@ -36,11 +36,17 @@ var upload = multer({storage: memStorage, limits: {paths: 2, fieldSize: 8000000 
                         {name: 'section6Img', maxCount: 1}
                     ])
 
+const apicache = require('apicache')
+const cache = apicache.middleware
+
+const onlyStatusSuccess = (req, res) => res.statusCode === 200 || req.statusCode === 206
+
+const cacheSuccesses = cache('20 minutes', onlyStatusSuccess)
 
 // @route    GET api/blog
 // @desc     Get all blogs in db
 // @access   Public
-router.get('/', async (req, res, next) => {
+router.get('/', cacheSuccesses, async (req, res, next) => {
     try {
 
         console.log(typeof req.query.sort)
@@ -146,7 +152,7 @@ router.get('/', async (req, res, next) => {
 // @route    GET api/blog/:id
 // @desc     Get  blogs by id in db
 // @access   Public
-router.get('/:id', async (req, res) => {
+router.get('/:id', cacheSuccesses, async (req, res) => {
     try{
 
         var blog = await Blog.findOne({"idx": req.params.id}, {__v: 0, _id: 0});
