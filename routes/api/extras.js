@@ -17,17 +17,22 @@ const Extras = require('../../models/Extras');
 const Logs = require('../../models/Logs');
 
 const { getNextSequence, base64String, generateUniqueName } = require('../../utils/myUtils')
+const apicache = require('apicache')
+const cache = apicache.middleware
 
 const multer = require('multer')
 const memStorage = multer.memoryStorage()
 //fieldSize = 6mb
 var upload = multer({storage: memStorage, limits: {fieldSize: 6000000 , fields: 5, files: 4 }}).fields([{name:'images'}])
 
+const onlyStatusSuccess = (req, res) => res.statusCode === 200 || req.statusCode === 206
+
+const cacheSuccesses = cache('5 minutes', onlyStatusSuccess)
 
 // @route    GET api/extra
 // @desc     Get extras in db
 // @access   Public
-router.get('/', async (req, res, next) => {
+router.get('/', cacheSuccesses, async (req, res, next) => {
     try {
 
         // const { text, image, story} = req.body
@@ -89,7 +94,7 @@ router.get('/', async (req, res, next) => {
 // @route    GET api/extra
 // @desc     Get extras in db
 // @access   Public
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', cacheSuccesses, async (req, res, next) => {
     try {
 
         // const { text, image, story} = req.body

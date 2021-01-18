@@ -29,11 +29,18 @@ const moment = require('moment');
 const memStorage = multer.memoryStorage()
 var upload = multer({storage: memStorage, limits: {paths: 2, fieldSize: 6000000 , fields: 15, files: 10 }}).fields([{name:'previews'}])
 
+const apicache = require('apicache')
+const cache = apicache.middleware
+
+const onlyStatusSuccess = (req, res) => res.statusCode === 200 || req.statusCode === 206
+
+const cacheSuccesses = cache('5 minutes', onlyStatusSuccess)
+
 
 // @route    GET api/products
 // @desc     Get all products in db
 // @access   Private
-router.get('/', async (req, res, next) => {
+router.get('/', cacheSuccesses, async (req, res, next) => {
     try {
 
         const filter = req.query.filter === undefined ? {} : JSON.parse(req.query.filter)
@@ -276,7 +283,7 @@ router.get('/', async (req, res, next) => {
 // @route    GET api/products/:id
 // @desc     Get products in db by id
 // @access   Public
-router.get('/:idx', async (req, res, next) => {
+router.get('/:idx', cacheSuccesses, async (req, res, next) => {
     try {
 
         var product = await Product.findOne({"idx": req.params.idx}, {_id: 0, __v: 0})

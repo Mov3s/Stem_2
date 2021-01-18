@@ -15,6 +15,14 @@ const Customer = require('../../models/Customer');
 const User = require('../../models/User');
 const Products = require('../../models/Product');
 
+
+const apicache = require('apicache')
+const cache = apicache.middleware
+
+const onlyStatusSuccess = (req, res) => res.statusCode === 200 || req.statusCode === 206
+
+const cacheSuccesses = cache('5 minutes', onlyStatusSuccess)
+
 // @route    POST api/reviews
 // @desc     Add review 
 // @access   Public
@@ -81,6 +89,7 @@ router.post(
 // @access   private
 router.get(
     '/',
+    cacheSuccesses,
     // auth,
     async (req, res) => {
 
@@ -196,6 +205,7 @@ router.get(
 // @access   private
 router.get(
   '/:idx',
+  cacheSuccesses,
   auth,
   async (req, res) => {
 
