@@ -46,7 +46,8 @@ const authenticate = async ({ username, password, ipAddress }) => {
 
 const registerUser = async ({email, password, password2, ipAddress }) => {
 
-    let user = await User.findOne({ email });
+
+    let user = await User.findOne({ email: email.toLowerCase() });
 
     if (user) {
        throw 'User already exist'
@@ -59,7 +60,7 @@ const registerUser = async ({email, password, password2, ipAddress }) => {
     const seq = await getNextSequence(mongoose.connection.db, 'userId')
     user = new User({
         idx: seq,
-        email,
+        email: email.toLowerCase(),
         password,
         // isAdmin : isAdmin ? isAdmin : false
     });
