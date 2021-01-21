@@ -13,7 +13,7 @@ const { getNextSequence } = require('../utils/myUtils')
 
 const authenticate = async ({ username, password, ipAddress }) => {
 
-    const user = await User.findOne({ email: username });
+    const user = await User.findOne({ email: username.toLowerCase() });
 
     if (!user){
         throw "Username or password is incorrect"
