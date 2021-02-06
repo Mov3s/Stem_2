@@ -104,7 +104,7 @@ async (req, res) => {
           },
           billing_address_collection: 'auto',
           shipping_address_collection: {
-            allowed_countries: ['IE', 'GB'],
+            allowed_countries: ['IE'],
           },
         });
 
@@ -230,7 +230,7 @@ async (req, res) => {
             billing_address_collection: 'auto',
             allow_promotion_codes: true,
             shipping_address_collection: {
-              allowed_countries: ['IE', 'GB'],
+              allowed_countries: ['IE'],
             },
             metadata: { 
               phonenumber: details.phonenumber,
@@ -283,7 +283,7 @@ async (req, res) => {
             billing_address_collection: 'auto',
             allow_promotion_codes: true,
             shipping_address_collection: {
-              allowed_countries: ['IE', 'GB'],
+              allowed_countries: ['IE'],
             },
           });
 
