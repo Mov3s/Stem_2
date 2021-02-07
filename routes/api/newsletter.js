@@ -45,7 +45,8 @@ router.post('/',
 
             html: "<p>Hi,</p>" +
                 "<p>Thanks for signing up to InPhinityX Newsletter!</p>"+
-                "<p>We are so delighted you have chosen to be part of the Family, and hope you have a great time on our website.</p>"+
+                "<p>We are so delighted you have chosen to be part of the Family, to say thank you see your special discount code below.</p>" +
+                "<p><b>USE CODE: INPXNEW10</b> to get <b>10% OFF</b> your First Order.</p>" +
                 "<p>Keep your eyes peeled for our special discount codes delivered to your email from time to time.</p>"+
                 "<p>Warm hugs</p>"+
                 "<p>The InphinityX Team</p>"
