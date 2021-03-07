@@ -104,6 +104,8 @@ router.get(
         // console.log("[REVIEWS - DECODEDURL]", decodeURIComponent(req.url.replace(/\+/g, ' ')))
 
         const count = await Reviews.countDocuments({}).exec()
+        const chunksCollection = mongoose.connection.db.collection("previews.chunks") 
+        const filesCollection = mongoose.connection.db.collection("previews.files")
 
         if (Object.keys(req.query).length === 0) {
           // reviews = await Reviews.find({ status: 'accepted'},{ __v: 0, _id: 0})     
@@ -120,9 +122,6 @@ router.get(
           }
 
           if (!reviews) return res.status(404).json("Reviews not Found")
-
-          const chunksCollection = mongoose.connection.db.collection("previews.chunks") 
-          const filesCollection = mongoose.connection.db.collection("previews.files")
 
           let product 
           let newReviews = []
@@ -145,7 +144,16 @@ router.get(
                 _imageBinaryJSON = JSON.parse(JSON.stringify(imageBinary))
 
                 rev = JSON.parse(JSON.stringify(rev))
-                rev.base64 = base64String(_imageBinaryJSON[0].data, ext)
+
+                let chunksData = ''
+                if (_imageBinaryJSON.length > 1){
+                    _imageBinaryJSON.forEach(chun => {
+                        chunksData += chun.data
+                    });
+                }else{
+                    chunksData = _imageBinaryJSON[0].data
+                }
+                rev.base64 = base64String(chunksData, ext)
 
                 rev.productName = product.name
                 newReviews.push(rev)
@@ -185,10 +193,47 @@ router.get(
             if (Object.keys(filter).length > 0 && filter.product_id){
                 reviews = await Reviews.find({ product_id: filter.product_id }, {__v: 0, _id: 0})
 
-                if (!reviews) return res.status(404).json("Reviews not Found")
+                if (!reviews || reviews.length == 0) return res.status(404).json("Reviews not Found")
+
+                let filteredReviews = []
+
+                for (let rev of reviews){
+                  product = await Products.findOne({ idx: rev.product_id })
+      
+                  if (!product) continue;
+                  
+                  const imageName = product.previews.length > 0 ? product.previews[0] :  "No Image";
+      
+                  if (imageName !== "No Image"){  
+
+                      const blobs = await filesCollection.find({ "filename": imageName }).toArray()
+                      let ext, _imageBinaryJSON
+      
+                      const blobsJSON = JSON.parse(JSON.stringify(blobs));
+                      ext = blobsJSON[0].filename.split('.')[1]
+
+                      const imageBinary = await chunksCollection.find({ "files_id" : mongoose.Types.ObjectId(blobsJSON[0]._id) }).toArray()
+                      _imageBinaryJSON = JSON.parse(JSON.stringify(imageBinary))
+      
+                      rev = JSON.parse(JSON.stringify(rev))
+
+                      let chunksData = ''
+                      if (_imageBinaryJSON.length > 1){
+                          _imageBinaryJSON.forEach(chun => {
+                              chunksData += chun.data
+                          });
+                      }else{
+                          chunksData = _imageBinaryJSON[0].data
+                      }
+                      rev.base64 = base64String(chunksData, ext)
+      
+                      rev.productName = product.name
+                      filteredReviews.push(rev)
+                  }
+                }
                 // console.log("[REVIEWS - QUERY(product_id)]", reviews)
-                Reviews.setContentLimit(res, header, range, reviews.length)
-                return res.status(206).json(reviews)
+                Reviews.setContentLimit(res, header, range, filteredReviews.length)
+                return res.status(206).json(filteredReviews)
             }
           }
         }
@@ -206,7 +251,7 @@ router.get(
 router.get(
   '/:idx',
   cacheSuccesses,
-  auth,
+  // auth,
   async (req, res) => {
 
     try{

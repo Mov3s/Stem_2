@@ -43,7 +43,7 @@
     "ra-input-rich-text": "^3.7.1",
     "rate-limit-redis": "^2.0.0",
     "redis": "^3.0.2",
-    "sharp": "^0.26.0",
+    "sharp": "^0.27.2",
     "stripe": "^8.114.0",
     "xoauth2": "^1.2.0"
   },
