@@ -467,7 +467,7 @@ router.put('/',
 // @access   Private
 router.post("/", 
     [
-        // auth, 
+        auth,  
         upload,
         resizeImage,
         [
